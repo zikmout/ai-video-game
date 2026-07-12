@@ -61,6 +61,37 @@ export class CameraController {
     this.camera.lookAt(this.lookAt);
   }
 
+  /**
+   * Chase camera for driving: sits behind the car along its heading and looks
+   * ahead. Independent of mouse yaw/pitch. On exit, `syncYawTo` should be called
+   * so the on-foot camera picks up where this left off.
+   */
+  chase(
+    focus: THREE.Vector3,
+    heading: number,
+    distance: number,
+    height: number,
+    lambda: number,
+    dt: number,
+  ): void {
+    // Car forward is (-sin, 0, -cos) of heading; camera sits opposite.
+    const backX = Math.sin(heading);
+    const backZ = Math.cos(heading);
+    this.desired.set(
+      focus.x + backX * distance,
+      focus.y + height,
+      focus.z + backZ * distance,
+    );
+    this.camera.position.x = damp(this.camera.position.x, this.desired.x, lambda, dt);
+    this.camera.position.y = damp(this.camera.position.y, this.desired.y, lambda, dt);
+    this.camera.position.z = damp(this.camera.position.z, this.desired.z, lambda, dt);
+
+    this.lookAt.copy(focus).add(new THREE.Vector3(0, 0.8, 0));
+    this.camera.lookAt(this.lookAt);
+    // Keep on-foot yaw aligned with travel direction for a smooth handover.
+    this.yaw = heading + Math.PI;
+  }
+
   /** Forward direction on the XZ plane (unit vector), driven by yaw. */
   getForwardXZ(out = new THREE.Vector3()): THREE.Vector3 {
     return out.set(Math.sin(this.yaw), 0, Math.cos(this.yaw)).normalize();

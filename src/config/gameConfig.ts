@@ -54,6 +54,41 @@ export const GameConfig = {
     spawn: [0, 1.2, 8] as [number, number, number],
   },
 
+  vehicle: {
+    /** Max forward speed (m/s ≈ 108 km/h at 30). */
+    maxSpeed: 30,
+    /** Max reverse speed (m/s). */
+    maxReverse: 9,
+    /** Engine acceleration (m/s²). */
+    acceleration: 14,
+    /** Braking deceleration (m/s²). */
+    brakeForce: 26,
+    /** Passive rolling deceleration when coasting (m/s²). */
+    drag: 4,
+    /** Max steering angle at low speed (radians). */
+    maxSteer: 0.6,
+    /** Steering is reduced at speed for stability (0..1 of maxSteer at maxSpeed). */
+    highSpeedSteerFactor: 0.35,
+    /** Wheelbase (m) used for the bicycle steering model. */
+    wheelbase: 2.4,
+    /** How fast the player can enter/exit (metres of reach). */
+    enterRange: 3.5,
+    driveCamera: {
+      distance: 9,
+      height: 4,
+      lambda: 6,
+    },
+  },
+
+  traffic: {
+    /** Number of autonomous cars. */
+    count: 16,
+    /** Cruise speed of AI cars (m/s). */
+    speed: 10,
+    /** Distance at which an AI car brakes for an obstacle ahead (m). */
+    lookahead: 9,
+  },
+
   city: {
     /** Number of blocks per side of the grid. */
     blocks: 10,

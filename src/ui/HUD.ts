@@ -13,6 +13,10 @@ export class HUD {
   private readonly hud: HTMLDivElement;
   private readonly fpsEl: HTMLSpanElement;
   private readonly hintEl: HTMLDivElement;
+  private promptEl!: HTMLDivElement;
+  private speedoEl!: HTMLDivElement;
+  private kmhEl!: HTMLSpanElement;
+  private reticleEl!: HTMLDivElement;
 
   constructor(root: HTMLElement, callbacks: HUDCallbacks) {
     // Start / pause menu overlay.
@@ -40,14 +44,22 @@ export class HUD {
     this.hud.innerHTML = `
       <div class="top-left">
         <div class="label">Los Asetinos</div>
-        <div class="clock">M1 · Ville & quartiers</div>
+        <div class="clock">M2 · Véhicules</div>
       </div>
       <span class="fps">-- fps</span>
-      <div class="reticle"></div>`;
+      <div class="reticle"></div>
+      <div class="prompt" style="display:none"></div>
+      <div class="speedo" style="display:none">
+        <span class="kmh">0</span><span class="unit">km/h</span>
+      </div>`;
     this.hud.style.display = 'none';
     root.appendChild(this.hud);
 
     this.fpsEl = this.hud.querySelector('.fps') as HTMLSpanElement;
+    this.promptEl = this.hud.querySelector('.prompt') as HTMLDivElement;
+    this.speedoEl = this.hud.querySelector('.speedo') as HTMLDivElement;
+    this.kmhEl = this.hud.querySelector('.kmh') as HTMLSpanElement;
+    this.reticleEl = this.hud.querySelector('.reticle') as HTMLDivElement;
     this.hintEl = this.overlay.querySelector('.menu-card') as HTMLDivElement;
   }
 
@@ -77,5 +89,26 @@ export class HUD {
 
   setFps(fps: number): void {
     this.fpsEl.textContent = `${Math.round(fps)} fps`;
+  }
+
+  /** Show/hide a contextual prompt (e.g. "E — Monter"). Empty hides it. */
+  setPrompt(text: string): void {
+    if (text) {
+      this.promptEl.textContent = text;
+      this.promptEl.style.display = 'block';
+    } else {
+      this.promptEl.style.display = 'none';
+    }
+  }
+
+  /** Switch HUD between on-foot (reticle) and driving (speedometer). */
+  setDriving(driving: boolean): void {
+    this.speedoEl.style.display = driving ? 'flex' : 'none';
+    this.reticleEl.style.display = driving ? 'none' : 'block';
+  }
+
+  /** Update the speedometer. `speed` in m/s; displayed as km/h. */
+  setSpeed(speed: number): void {
+    this.kmhEl.textContent = String(Math.round(Math.abs(speed) * 3.6));
   }
 }

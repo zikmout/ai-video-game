@@ -12,7 +12,7 @@ engineered to a studio-grade standard.
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Status](https://img.shields.io/badge/milestone-M1%20·%20City%20%26%20districts-35d0a5)
+![Status](https://img.shields.io/badge/milestone-M2%20·%20Vehicles%20%26%20traffic-35d0a5)
 
 <br/>
 
@@ -37,6 +37,11 @@ configured — *without touching game code*.
 
 ## ✨ Highlights
 
+- 🚗 **Drive anything** — walk up to a car, press `E`, and drive with arcade
+  physics (throttle, brake, reverse, speed-sensitive steering) and a chase cam +
+  speedometer.
+- 🚦 **Living traffic** — autonomous cars flow through the road grid, follow
+  lanes, turn at intersections and brake for each other and for you.
 - 🏙️ **Procedural city with districts** — a downtown core of glass towers,
   residential rings, parks and a beach strip, all zoned deterministically from a
   seed.
@@ -51,8 +56,8 @@ configured — *without touching game code*.
 <div align="center">
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/street.png" alt="Walking a downtown street" width="100%"/><br/><sub><b>Street level</b> — glass & masonry façades, lane markings, streetlights, shadows</sub></td>
-<td width="50%"><img src="docs/screenshots/menu.png" alt="Start menu" width="100%"/><br/><sub><b>Start menu</b> — the world renders live behind the title</sub></td>
+<td width="50%"><img src="docs/screenshots/driving.png" alt="Driving through the city with traffic" width="100%"/><br/><sub><b>Driving</b> — chase cam, speedometer, and AI traffic sharing the road</sub></td>
+<td width="50%"><img src="docs/screenshots/street.png" alt="On foot with parked cars" width="100%"/><br/><sub><b>Street level</b> — parked cars, façades, lane markings, shadows</sub></td>
 </tr>
 </table>
 </div>
@@ -69,7 +74,11 @@ Open the URL Vite prints (default http://localhost:5173) and press **▶ Jouer**
 > Tip: append `?play` to the URL to skip the menu and drop straight into the city
 > (handy for demos and screenshots).
 
+> Tip: `?drive` drops you straight into a car.
+
 ### Controls
+
+**On foot**
 
 | Action          | Key                        |
 | --------------- | -------------------------- |
@@ -77,7 +86,17 @@ Open the URL Vite prints (default http://localhost:5173) and press **▶ Jouer**
 | Sprint          | `Shift`                    |
 | Jump            | `Space`                    |
 | Look around     | Mouse (click to capture)   |
+| Enter car       | `E` / `F` (near a car)     |
 | Pause / release | `Esc`                      |
+
+**Driving**
+
+| Action              | Key            |
+| ------------------- | -------------- |
+| Accelerate / reverse| `W` / `S`      |
+| Steer               | `A` / `D`      |
+| Handbrake           | `Space`        |
+| Exit car            | `E` / `F`      |
 
 ## 🗺️ Roadmap
 
@@ -88,8 +107,8 @@ Each milestone is independently playable — see [docs/ROADMAP.md](docs/ROADMAP.
 | --------- | ----- | ------ |
 | **M0** | Engine core + first playable city | ✅ done |
 | **M1** | Districts, props, a city that looks alive | ✅ done |
-| **M2** | Drivable vehicles + autonomous traffic | ⏳ next |
-| **M3** | Pedestrians & world simulation (day/night, mini-map) | ⬜ |
+| **M2** | Drivable vehicles + autonomous traffic | ✅ done |
+| **M3** | Pedestrians & world simulation (day/night, mini-map) | ⏳ next |
 | **M4** | Weapons, police & wanted system | ⬜ |
 | **M5** | Missions, radio, interiors, flyable plane | ⬜ |
 | **M6** | AI-generated assets, cinematics, perf pass | ⬜ |

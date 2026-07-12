@@ -18,11 +18,11 @@ clean, studio-grade foundation. Each milestone is meant to be independently play
 - [x] Denser, more varied buildings; districts (downtown, residential, beach, park)
 - [x] Props & decoration (palms, benches, hydrants, bins)
 
-## M2 — Vehicles
+## ✅ M2 — Vehicles
 
-- [ ] Drivable cars with arcade physics (accelerate, brake, steer)
-- [ ] Enter/exit vehicle flow, driving camera + speedo HUD
-- [ ] Autonomous traffic on the road grid (lanes, stops)
+- [x] Drivable cars with arcade physics (accelerate, brake, reverse, steer)
+- [x] Enter/exit vehicle flow, chase camera + speedometer HUD
+- [x] Autonomous traffic on the road grid (lanes, turns, collision braking)
 
 ## M3 — NPCs & world simulation
 

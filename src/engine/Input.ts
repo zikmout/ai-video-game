@@ -11,6 +11,7 @@ export type InputAction =
   | 'right'
   | 'sprint'
   | 'jump'
+  | 'interact'
   | 'pause';
 
 const DEFAULT_BINDINGS: Record<string, InputAction> = {
@@ -25,6 +26,8 @@ const DEFAULT_BINDINGS: Record<string, InputAction> = {
   ShiftLeft: 'sprint',
   ShiftRight: 'sprint',
   Space: 'jump',
+  KeyE: 'interact',
+  KeyF: 'interact',
   Escape: 'pause',
 };
 

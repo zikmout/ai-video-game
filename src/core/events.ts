@@ -15,6 +15,10 @@ export interface GameEvents {
   'player:spawned': { position: [number, number, number] };
   'player:died': { cause: string };
 
+  // Vehicles
+  'vehicle:entered': void;
+  'vehicle:exited': void;
+
   // World / progression (used by later milestones)
   'wanted:changed': { level: number };
   'money:changed': { amount: number; delta: number };
