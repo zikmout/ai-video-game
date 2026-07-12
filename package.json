@@ -1,0 +1,32 @@
+{
+  "name": "los-asetinos",
+  "version": "0.1.0",
+  "description": "Los Asetinos — an open-world sandbox game built in the browser with Three.js. An AI-assisted GTA-style experiment.",
+  "type": "module",
+  "license": "MIT",
+  "author": "zikmout",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/three": "^0.169.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.6.0",
+    "vite": "^5.4.0"
+  }
+}
