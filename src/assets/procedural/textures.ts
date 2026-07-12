@@ -110,6 +110,28 @@ export function makeGroundTexture(repeat = 40): THREE.CanvasTexture {
   return finalize(canvas, repeat);
 }
 
+/** Sandy beach surface: warm base with fine grain and faint ripples. */
+export function makeSandTexture(repeat = 40): THREE.CanvasTexture {
+  const size = 256;
+  const { canvas, ctx } = makeCanvas(size);
+  ctx.fillStyle = '#e2cfa4';
+  ctx.fillRect(0, 0, size, size);
+  // Faint wavy ripples that wrap horizontally.
+  ctx.strokeStyle = 'rgba(190,170,130,0.35)';
+  ctx.lineWidth = 1.5;
+  for (let y = 0; y < size; y += 12) {
+    ctx.beginPath();
+    for (let x = 0; x <= size; x += 8) {
+      const yy = y + Math.sin((x / size) * Math.PI * 4) * 3;
+      if (x === 0) ctx.moveTo(x, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+  }
+  addNoise(ctx, size, 26);
+  return finalize(canvas, repeat);
+}
+
 /** A façade texture: windows in a grid, tinted per building. */
 export function makeFacadeTexture(
   baseColor: string,

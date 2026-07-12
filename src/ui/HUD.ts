@@ -40,7 +40,7 @@ export class HUD {
     this.hud.innerHTML = `
       <div class="top-left">
         <div class="label">Los Asetinos</div>
-        <div class="clock">M0 · Base jouable</div>
+        <div class="clock">M1 · Ville & quartiers</div>
       </div>
       <span class="fps">-- fps</span>
       <div class="reticle"></div>`;

@@ -56,7 +56,7 @@ export const GameConfig = {
 
   city: {
     /** Number of blocks per side of the grid. */
-    blocks: 8,
+    blocks: 10,
     /** Size of one block (building footprint area), metres. */
     blockSize: 42,
     /** Width of the roads between blocks, metres. */

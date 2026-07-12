@@ -5,8 +5,17 @@ import {
   makeAsphaltTexture,
   makeSidewalkTexture,
   makeGroundTexture,
+  makeSandTexture,
   makeFacadeTexture,
 } from '@/assets/procedural/textures';
+import { districtAt, DISTRICT_STYLES, type District } from './districts';
+import {
+  makePalmTree,
+  makeBench,
+  makeHydrant,
+  makeTrashBin,
+  disposePropCache,
+} from '@/assets/procedural/props';
 
 /**
  * Procedural city generator.
@@ -28,18 +37,19 @@ export class City {
   /** Axis-aligned building boxes for simple collision in later milestones. */
   readonly buildingBoxes: THREE.Box3[] = [];
 
-  private readonly buildingPalette = [
-    '#c8c2b6',
-    '#a9b7c6',
-    '#d8c8b8',
-    '#b7a99a',
-    '#9fb0a4',
-    '#cdb9a3',
-    '#8fa1b3',
-  ];
+  /** Shared prop container so scattered decoration is one group. */
+  private readonly props = new THREE.Group();
+
+  /** Ground materials keyed by district open-ground type, created lazily. */
+  private groundMaterials!: {
+    grass: THREE.Material;
+    sand: THREE.Material;
+    plaza: THREE.Material;
+  };
 
   constructor() {
     this.group.name = 'City';
+    this.props.name = 'Props';
     this.rng = new Random(GameConfig.seed);
 
     const { blocks, blockSize, roadWidth } = GameConfig.city;
@@ -49,8 +59,21 @@ export class City {
 
     this.buildGround();
     this.buildRoads();
+    this.buildDistrictMaterials();
     this.buildBlocks();
     this.buildStreetlights();
+    this.group.add(this.props);
+  }
+
+  private buildDistrictMaterials(): void {
+    const grassTex = this.track(makeGroundTexture(4));
+    const sandTex = this.track(makeSandTexture(4));
+    const plazaTex = this.track(makeSidewalkTexture(5));
+    this.groundMaterials = {
+      grass: this.track(new THREE.MeshStandardMaterial({ map: grassTex, roughness: 1 })),
+      sand: this.track(new THREE.MeshStandardMaterial({ map: sandTex, roughness: 1 })),
+      plaza: this.track(new THREE.MeshStandardMaterial({ map: plazaTex, roughness: 1 })),
+    };
   }
 
   private track<T extends { dispose(): void }>(obj: T): T {
@@ -158,31 +181,60 @@ export class City {
       for (let bz = 0; bz < blocks; bz++) {
         const cx = -half + bx * cell + blockSize / 2 + roadWidth / 2;
         const cz = -half + bz * cell + blockSize / 2 + roadWidth / 2;
+        const district = districtAt(bx, bz, blocks);
+        const style = DISTRICT_STYLES[district];
 
         // Sidewalk pad (slightly raised) covering the block footprint.
-        const padGeo = this.track(
-          new THREE.BoxGeometry(blockSize, 0.12, blockSize),
-        );
+        const padGeo = this.track(new THREE.BoxGeometry(blockSize, 0.12, blockSize));
         const pad = new THREE.Mesh(padGeo, sidewalkMat);
         pad.position.set(cx, 0.06, cz);
         pad.receiveShadow = true;
         this.group.add(pad);
 
-        this.buildBuilding(cx, cz, blockSize - sidewalkWidth * 2);
+        const innerFootprint = blockSize - sidewalkWidth * 2;
+
+        if (this.rng.bool(style.openChance)) {
+          // Open block: lay a ground surface pad and scatter more props.
+          this.buildOpenGround(cx, cz, innerFootprint, style.openGround);
+        } else {
+          this.buildBuilding(cx, cz, innerFootprint, style);
+        }
+
+        this.scatterProps(cx, cz, blockSize, district, style.propDensity);
       }
     }
   }
 
-  private buildBuilding(cx: number, cz: number, maxFootprint: number): void {
+  private buildOpenGround(
+    cx: number,
+    cz: number,
+    footprint: number,
+    kind: 'grass' | 'sand' | 'plaza',
+  ): void {
+    const geo = this.track(new THREE.BoxGeometry(footprint, 0.06, footprint));
+    const mesh = new THREE.Mesh(geo, this.groundMaterials[kind]);
+    mesh.position.set(cx, 0.13, cz);
+    mesh.receiveShadow = true;
+    mesh.name = `Open_${kind}`;
+    this.group.add(mesh);
+  }
+
+  private buildBuilding(
+    cx: number,
+    cz: number,
+    maxFootprint: number,
+    style: (typeof DISTRICT_STYLES)[District],
+  ): void {
     const cfg = GameConfig.city.building;
-    const floors = this.rng.int(cfg.minFloors, cfg.maxFloors);
+    const baseFloors = this.rng.int(cfg.minFloors, cfg.maxFloors);
+    const floors = Math.max(1, Math.round(baseFloors * style.heightScale));
     const height = floors * cfg.floorHeight;
 
     // Footprint with a little variation, always within the sidewalk.
     const fw = maxFootprint * this.rng.range(0.7, 0.98);
     const fd = maxFootprint * this.rng.range(0.7, 0.98);
 
-    const baseColor = this.rng.pick(this.buildingPalette);
+    const baseColor = this.rng.pick(style.palette);
     const windowColor = this.rng.bool(0.5) ? '#ffe9a8' : '#bfe4ff';
     const columns = Math.max(3, Math.round(fw / 4));
 
@@ -210,6 +262,70 @@ export class City {
       new THREE.Vector3(fw, height, fd),
     );
     this.buildingBoxes.push(box);
+  }
+
+  /**
+   * Scatter decoration around a block's edges (sidewalk band). District and
+   * density decide what and how many: palms/benches on beaches and parks,
+   * hydrants and bins in the city. Props are placed on the sidewalk ring so they
+   * don't intersect buildings.
+   */
+  private scatterProps(
+    cx: number,
+    cz: number,
+    blockSize: number,
+    district: District,
+    density: number,
+  ): void {
+    const ring = blockSize / 2 - 1.4; // just inside the block edge
+    const count = Math.round(this.rng.range(2, 6) * density);
+    const padTop = 0.12;
+
+    for (let i = 0; i < count; i++) {
+      // Pick a point along the sidewalk ring (one of four edges).
+      const edge = this.rng.int(0, 3);
+      const t = this.rng.range(-ring, ring);
+      let px = cx;
+      let pz = cz;
+      if (edge === 0) {
+        px = cx + t;
+        pz = cz - ring;
+      } else if (edge === 1) {
+        px = cx + t;
+        pz = cz + ring;
+      } else if (edge === 2) {
+        px = cx - ring;
+        pz = cz + t;
+      } else {
+        px = cx + ring;
+        pz = cz + t;
+      }
+
+      const prop = this.pickProp(district);
+      if (!prop) continue;
+      prop.position.set(px, padTop, pz);
+      prop.rotation.y = this.rng.range(0, Math.PI * 2);
+      this.props.add(prop);
+    }
+  }
+
+  private pickProp(district: District): THREE.Group | null {
+    switch (district) {
+      case 'beach':
+        return this.rng.bool(0.7) ? makePalmTree(this.rng.range(5, 8)) : makeBench();
+      case 'park':
+        return this.rng.bool(0.6) ? makePalmTree(this.rng.range(6, 9)) : makeBench();
+      case 'downtown':
+        if (this.rng.bool(0.4)) return makeHydrant();
+        if (this.rng.bool(0.5)) return makeTrashBin();
+        return this.rng.bool(0.5) ? makePalmTree(this.rng.range(4, 6)) : null;
+      case 'residential':
+        if (this.rng.bool(0.5)) return makePalmTree(this.rng.range(4, 7));
+        if (this.rng.bool(0.5)) return makeBench();
+        return this.rng.bool(0.5) ? makeTrashBin() : null;
+      default:
+        return null;
+    }
   }
 
   private buildStreetlights(): void {
@@ -267,6 +383,7 @@ export class City {
   dispose(): void {
     this.disposables.forEach((d) => d.dispose());
     this.disposables.length = 0;
+    disposePropCache();
     this.group.clear();
   }
 }
