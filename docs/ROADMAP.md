@@ -11,12 +11,12 @@ clean, studio-grade foundation. Each milestone is meant to be independently play
 - [x] Third-person player controller (walk, sprint, jump, mouse-look)
 - [x] Play/pause flow and HUD scaffolding
 
-## M1 — A city that looks alive
+## ✅ M1 — A city that looks alive
 
-- [ ] Seamless procedural textures for roads, sidewalks, ground
-- [ ] Skybox with a real sky gradient / cubemap
-- [ ] Denser, more varied buildings; districts (downtown, port, beach, park)
-- [ ] Props & decoration (palms, benches, lamps, hydrants)
+- [x] Seamless procedural textures for roads, sidewalks, ground, sand
+- [x] Sky gradient dome with sun
+- [x] Denser, more varied buildings; districts (downtown, residential, beach, park)
+- [x] Props & decoration (palms, benches, hydrants, bins)
 
 ## M2 — Vehicles
 
