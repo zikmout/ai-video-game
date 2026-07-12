@@ -9,13 +9,7 @@ import {
   makeFacadeTexture,
 } from '@/assets/procedural/textures';
 import { districtAt, DISTRICT_STYLES, type District } from './districts';
-import {
-  makePalmTree,
-  makeBench,
-  makeHydrant,
-  makeTrashBin,
-  disposePropCache,
-} from '@/assets/procedural/props';
+import { getPropParts, disposePropCache, type PropType } from '@/assets/procedural/props';
 
 /**
  * Procedural city generator.
@@ -39,6 +33,22 @@ export class City {
 
   /** Shared prop container so scattered decoration is one group. */
   private readonly props = new THREE.Group();
+
+  /**
+   * Static repeated geometry is gathered during generation and emitted as
+   * InstancedMeshes at the end — one draw call per unique part instead of one
+   * per object (sidewalk pads, open-ground pads, every prop part).
+   */
+  private readonly padCenters: Array<[number, number]> = [];
+  private readonly openGroundCenters: Record<'grass' | 'sand' | 'plaza', Array<[number, number]>> = {
+    grass: [],
+    sand: [],
+    plaza: [],
+  };
+  private readonly propPlacements = new Map<
+    PropType,
+    Array<{ x: number; z: number; rotY: number; scale: number }>
+  >();
 
   /**
    * Streetlight lamp material, exposed so the day/night cycle can switch the
@@ -67,6 +77,9 @@ export class City {
     this.buildRoads();
     this.buildDistrictMaterials();
     this.buildBlocks();
+    this.buildPadInstances();
+    this.buildOpenGroundInstances();
+    this.buildPropInstances();
     this.buildStreetlights();
     this.group.add(this.props);
   }
@@ -178,11 +191,6 @@ export class City {
     const cell = blockSize + roadWidth;
     const { half } = this.bounds;
 
-    const sidewalkTex = this.track(makeSidewalkTexture(6));
-    const sidewalkMat = this.track(
-      new THREE.MeshStandardMaterial({ map: sidewalkTex, roughness: 1 }),
-    );
-
     for (let bx = 0; bx < blocks; bx++) {
       for (let bz = 0; bz < blocks; bz++) {
         const cx = -half + bx * cell + blockSize / 2 + roadWidth / 2;
@@ -190,18 +198,14 @@ export class City {
         const district = districtAt(bx, bz, blocks);
         const style = DISTRICT_STYLES[district];
 
-        // Sidewalk pad (slightly raised) covering the block footprint.
-        const padGeo = this.track(new THREE.BoxGeometry(blockSize, 0.12, blockSize));
-        const pad = new THREE.Mesh(padGeo, sidewalkMat);
-        pad.position.set(cx, 0.06, cz);
-        pad.receiveShadow = true;
-        this.group.add(pad);
+        // Sidewalk pad covering the block footprint (instanced at the end).
+        this.padCenters.push([cx, cz]);
 
         const innerFootprint = blockSize - sidewalkWidth * 2;
 
         if (this.rng.bool(style.openChance)) {
-          // Open block: lay a ground surface pad and scatter more props.
-          this.buildOpenGround(cx, cz, innerFootprint, style.openGround);
+          // Open block: a ground surface pad (instanced at the end).
+          this.openGroundCenters[style.openGround].push([cx, cz]);
         } else {
           this.buildBuilding(cx, cz, innerFootprint, style);
         }
@@ -211,18 +215,47 @@ export class City {
     }
   }
 
-  private buildOpenGround(
-    cx: number,
-    cz: number,
-    footprint: number,
-    kind: 'grass' | 'sand' | 'plaza',
-  ): void {
+  /** All sidewalk pads share one geometry/material → one draw call. */
+  private buildPadInstances(): void {
+    const { blockSize } = GameConfig.city;
+    const sidewalkTex = this.track(makeSidewalkTexture(6));
+    const sidewalkMat = this.track(
+      new THREE.MeshStandardMaterial({ map: sidewalkTex, roughness: 1 }),
+    );
+    const padGeo = this.track(new THREE.BoxGeometry(blockSize, 0.12, blockSize));
+    const pads = this.track(new THREE.InstancedMesh(padGeo, sidewalkMat, this.padCenters.length));
+    pads.name = 'SidewalkPads';
+    const dummy = new THREE.Object3D();
+    this.padCenters.forEach(([x, z], i) => {
+      dummy.position.set(x, 0.06, z);
+      dummy.updateMatrix();
+      pads.setMatrixAt(i, dummy.matrix);
+    });
+    pads.instanceMatrix.needsUpdate = true;
+    pads.receiveShadow = true;
+    this.group.add(pads);
+  }
+
+  /** Open-ground pads, one InstancedMesh per surface kind. */
+  private buildOpenGroundInstances(): void {
+    const { blockSize, sidewalkWidth } = GameConfig.city;
+    const footprint = blockSize - sidewalkWidth * 2;
     const geo = this.track(new THREE.BoxGeometry(footprint, 0.06, footprint));
-    const mesh = new THREE.Mesh(geo, this.groundMaterials[kind]);
-    mesh.position.set(cx, 0.13, cz);
-    mesh.receiveShadow = true;
-    mesh.name = `Open_${kind}`;
-    this.group.add(mesh);
+    const dummy = new THREE.Object3D();
+    for (const kind of ['grass', 'sand', 'plaza'] as const) {
+      const centers = this.openGroundCenters[kind];
+      if (!centers.length) continue;
+      const mesh = this.track(new THREE.InstancedMesh(geo, this.groundMaterials[kind], centers.length));
+      mesh.name = `Open_${kind}`;
+      centers.forEach(([x, z], i) => {
+        dummy.position.set(x, 0.13, z);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.receiveShadow = true;
+      this.group.add(mesh);
+    }
   }
 
   private buildBuilding(
@@ -273,8 +306,8 @@ export class City {
   /**
    * Scatter decoration around a block's edges (sidewalk band). District and
    * density decide what and how many: palms/benches on beaches and parks,
-   * hydrants and bins in the city. Props are placed on the sidewalk ring so they
-   * don't intersect buildings.
+   * hydrants and bins in the city. Placements are collected here and emitted
+   * as instanced meshes by `buildPropInstances`.
    */
   private scatterProps(
     cx: number,
@@ -285,7 +318,6 @@ export class City {
   ): void {
     const ring = blockSize / 2 - 1.4; // just inside the block edge
     const count = Math.round(this.rng.range(2, 6) * density);
-    const padTop = 0.12;
 
     for (let i = 0; i < count; i++) {
       // Pick a point along the sidewalk ring (one of four edges).
@@ -309,28 +341,70 @@ export class City {
 
       const prop = this.pickProp(district);
       if (!prop) continue;
-      prop.position.set(px, padTop, pz);
-      prop.rotation.y = this.rng.range(0, Math.PI * 2);
-      this.props.add(prop);
+      let list = this.propPlacements.get(prop.type);
+      if (!list) {
+        list = [];
+        this.propPlacements.set(prop.type, list);
+      }
+      list.push({ x: px, z: pz, rotY: this.rng.range(0, Math.PI * 2), scale: prop.scale });
     }
   }
 
-  private pickProp(district: District): THREE.Group | null {
+  /** Palm heights vary per instance; the unit palm is ~6.5 m tall. */
+  private palm(minH: number, maxH: number): { type: PropType; scale: number } {
+    return { type: 'palm', scale: this.rng.range(minH, maxH) / 6.5 };
+  }
+
+  private pickProp(district: District): { type: PropType; scale: number } | null {
     switch (district) {
       case 'beach':
-        return this.rng.bool(0.7) ? makePalmTree(this.rng.range(5, 8)) : makeBench();
+        return this.rng.bool(0.7) ? this.palm(5, 8) : { type: 'bench', scale: 1 };
       case 'park':
-        return this.rng.bool(0.6) ? makePalmTree(this.rng.range(6, 9)) : makeBench();
+        return this.rng.bool(0.6) ? this.palm(6, 9) : { type: 'bench', scale: 1 };
       case 'downtown':
-        if (this.rng.bool(0.4)) return makeHydrant();
-        if (this.rng.bool(0.5)) return makeTrashBin();
-        return this.rng.bool(0.5) ? makePalmTree(this.rng.range(4, 6)) : null;
+        if (this.rng.bool(0.4)) return { type: 'hydrant', scale: 1 };
+        if (this.rng.bool(0.5)) return { type: 'bin', scale: 1 };
+        return this.rng.bool(0.5) ? this.palm(4, 6) : null;
       case 'residential':
-        if (this.rng.bool(0.5)) return makePalmTree(this.rng.range(4, 7));
-        if (this.rng.bool(0.5)) return makeBench();
-        return this.rng.bool(0.5) ? makeTrashBin() : null;
+        if (this.rng.bool(0.5)) return this.palm(4, 7);
+        if (this.rng.bool(0.5)) return { type: 'bench', scale: 1 };
+        return this.rng.bool(0.5) ? { type: 'bin', scale: 1 } : null;
       default:
         return null;
+    }
+  }
+
+  /**
+   * Emit every collected prop as instanced meshes: for each prop type, each
+   * part becomes one InstancedMesh across all placements of that type.
+   */
+  private buildPropInstances(): void {
+    const padTop = 0.12;
+    const placement = new THREE.Matrix4();
+    const composed = new THREE.Matrix4();
+    const pos = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    const scl = new THREE.Vector3();
+    const up = new THREE.Vector3(0, 1, 0);
+
+    for (const [type, placements] of this.propPlacements) {
+      for (const partDef of getPropParts(type)) {
+        const mesh = this.track(
+          new THREE.InstancedMesh(partDef.geometry, partDef.material, placements.length),
+        );
+        mesh.name = `Prop_${type}`;
+        placements.forEach((p, i) => {
+          pos.set(p.x, padTop, p.z);
+          quat.setFromAxisAngle(up, p.rotY);
+          scl.setScalar(p.scale);
+          placement.compose(pos, quat, scl);
+          composed.multiplyMatrices(placement, partDef.matrix);
+          mesh.setMatrixAt(i, composed);
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.castShadow = true;
+        this.props.add(mesh);
+      }
     }
   }
 

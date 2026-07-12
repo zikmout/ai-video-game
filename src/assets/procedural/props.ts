@@ -1,14 +1,26 @@
 import * as THREE from 'three';
 
 /**
- * Procedural street props built from primitives. Each factory returns a fresh
- * `THREE.Group` positioned at the origin; callers place/rotate it. Geometries
- * and materials are shared per-factory via a small cache so a city full of palms
- * doesn't allocate thousands of duplicate buffers.
+ * Procedural street props, described as instancing-friendly *part lists*.
+ *
+ * A prop (palm, bench, …) is a set of parts, each pairing a shared geometry +
+ * material with the part's local transform at unit scale. The city collects
+ * every placement of a prop type, then renders each part as ONE InstancedMesh
+ * across all placements — a whole city of palms costs 11 draw calls instead of
+ * 11 per tree.
  *
  * These are placeholders for future AI-generated meshes (see docs/AI_ASSETS.md);
  * the world code that places props won't change when real models arrive.
  */
+
+export type PropType = 'palm' | 'bench' | 'hydrant' | 'bin';
+
+export interface PropPart {
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+  /** Local transform of this part within the prop, at unit prop scale. */
+  matrix: THREE.Matrix4;
+}
 
 // ── Shared material/geometry cache ──────────────────────────────────────────
 const cache = new Map<string, THREE.Material | THREE.BufferGeometry>();
@@ -35,108 +47,124 @@ const metalDark = () => mat('metalDark', () => new THREE.MeshStandardMaterial({ 
 const woodMat = () => mat('wood', () => new THREE.MeshStandardMaterial({ color: 0x9c6b3f, roughness: 0.85 }));
 const redMat = () => mat('red', () => new THREE.MeshStandardMaterial({ color: 0xb23b2e, roughness: 0.6 }));
 
-/** A palm tree: segmented trunk + a crown of angled fronds. */
-export function makePalmTree(height = 6): THREE.Group {
-  const g = new THREE.Group();
-  g.name = 'PalmTree';
+function part(
+  geometry: THREE.BufferGeometry,
+  material: THREE.Material,
+  position: [number, number, number],
+  rotation: [number, number, number] = [0, 0, 0],
+  scale: [number, number, number] = [1, 1, 1],
+): PropPart {
+  const matrix = new THREE.Matrix4().compose(
+    new THREE.Vector3(...position),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)),
+    new THREE.Vector3(...scale),
+  );
+  return { geometry, material, matrix };
+}
 
+/** Palm at unit scale ≈ 6.5 m tall; vary per instance with a uniform scale. */
+function palmParts(): PropPart[] {
+  const height = 6.5;
+  const parts: PropPart[] = [];
   const trunkGeo = geo('palmTrunk', () => new THREE.CylinderGeometry(0.18, 0.28, 1, 6));
-  const trunk = new THREE.Mesh(trunkGeo, trunkMat());
-  trunk.scale.y = height;
-  trunk.position.y = height / 2;
-  trunk.castShadow = true;
-  // Gentle lean.
-  trunk.rotation.z = (Math.random() - 0.5) * 0.12;
-  g.add(trunk);
+  parts.push(part(trunkGeo, trunkMat(), [0, height / 2, 0], [0, 0, 0.05], [1, height, 1]));
 
   const frondGeo = geo('palmFrond', () => new THREE.ConeGeometry(0.35, 2.6, 4, 1, true));
   const crownY = height - 0.2;
   const fronds = 7;
   for (let i = 0; i < fronds; i++) {
-    const frond = new THREE.Mesh(frondGeo, leafMat());
     const a = (i / fronds) * Math.PI * 2;
-    frond.position.set(Math.cos(a) * 0.9, crownY, Math.sin(a) * 0.9);
-    frond.rotation.z = Math.PI / 2.4;
-    frond.rotation.y = -a;
-    frond.castShadow = true;
-    g.add(frond);
+    parts.push(
+      part(
+        frondGeo,
+        leafMat(),
+        [Math.cos(a) * 0.9, crownY, Math.sin(a) * 0.9],
+        [0, -a, Math.PI / 2.4],
+      ),
+    );
   }
-  // Coconut cluster.
   const nutGeo = geo('coconut', () => new THREE.SphereGeometry(0.16, 6, 6));
-  for (let i = 0; i < 3; i++) {
-    const nut = new THREE.Mesh(nutGeo, trunkMat());
-    nut.position.set((Math.random() - 0.5) * 0.4, crownY - 0.1, (Math.random() - 0.5) * 0.4);
-    g.add(nut);
+  const nutOffsets: Array<[number, number]> = [
+    [0.14, 0.06],
+    [-0.1, 0.15],
+    [0.02, -0.16],
+  ];
+  for (const [nx, nz] of nutOffsets) {
+    parts.push(part(nutGeo, trunkMat(), [nx, crownY - 0.1, nz]));
   }
-  return g;
+  return parts;
 }
 
-/** A park bench: slatted seat + back on metal legs. */
-export function makeBench(): THREE.Group {
-  const g = new THREE.Group();
-  g.name = 'Bench';
+/** Park bench: slatted seat + back on metal legs. */
+function benchParts(): PropPart[] {
+  const parts: PropPart[] = [];
   const slatGeo = geo('benchSlat', () => new THREE.BoxGeometry(1.6, 0.06, 0.12));
   for (let i = 0; i < 3; i++) {
-    const seat = new THREE.Mesh(slatGeo, woodMat());
-    seat.position.set(0, 0.45, -0.18 + i * 0.16);
-    seat.castShadow = true;
-    g.add(seat);
-    const back = new THREE.Mesh(slatGeo, woodMat());
-    back.position.set(0, 0.62 + i * 0.14, -0.34);
-    back.rotation.x = -0.35;
-    g.add(back);
+    parts.push(part(slatGeo, woodMat(), [0, 0.45, -0.18 + i * 0.16]));
+    parts.push(part(slatGeo, woodMat(), [0, 0.62 + i * 0.14, -0.34], [-0.35, 0, 0]));
   }
   const legGeo = geo('benchLeg', () => new THREE.BoxGeometry(0.08, 0.45, 0.5));
   for (const x of [-0.7, 0.7]) {
-    const leg = new THREE.Mesh(legGeo, metalDark());
-    leg.position.set(x, 0.22, -0.2);
-    leg.castShadow = true;
-    g.add(leg);
+    parts.push(part(legGeo, metalDark(), [x, 0.22, -0.2]));
   }
-  return g;
+  return parts;
 }
 
-/** A fire hydrant. */
-export function makeHydrant(): THREE.Group {
-  const g = new THREE.Group();
-  g.name = 'Hydrant';
-  const body = new THREE.Mesh(
-    geo('hydrantBody', () => new THREE.CylinderGeometry(0.16, 0.2, 0.7, 10)),
-    redMat(),
-  );
-  body.position.y = 0.35;
-  body.castShadow = true;
-  g.add(body);
-  const cap = new THREE.Mesh(geo('hydrantCap', () => new THREE.SphereGeometry(0.17, 10, 8)), redMat());
-  cap.position.y = 0.72;
-  g.add(cap);
-  const nozzleGeo = geo('hydrantNozzle', () => new THREE.CylinderGeometry(0.06, 0.06, 0.18, 8));
-  for (const [x, z, ry] of [[0.18, 0, Math.PI / 2] as const, [0, 0.18, 0] as const]) {
-    const n = new THREE.Mesh(nozzleGeo, redMat());
-    n.position.set(x, 0.45, z);
-    n.rotation.z = ry === Math.PI / 2 ? Math.PI / 2 : 0;
-    n.rotation.x = ry === 0 ? Math.PI / 2 : 0;
-    g.add(n);
-  }
-  return g;
+function hydrantParts(): PropPart[] {
+  return [
+    part(
+      geo('hydrantBody', () => new THREE.CylinderGeometry(0.16, 0.2, 0.7, 10)),
+      redMat(),
+      [0, 0.35, 0],
+    ),
+    part(geo('hydrantCap', () => new THREE.SphereGeometry(0.17, 10, 8)), redMat(), [0, 0.72, 0]),
+    part(
+      geo('hydrantNozzle', () => new THREE.CylinderGeometry(0.06, 0.06, 0.18, 8)),
+      redMat(),
+      [0.18, 0.45, 0],
+      [0, 0, Math.PI / 2],
+    ),
+    part(
+      geo('hydrantNozzle', () => new THREE.CylinderGeometry(0.06, 0.06, 0.18, 8)),
+      redMat(),
+      [0, 0.45, 0.18],
+      [Math.PI / 2, 0, 0],
+    ),
+  ];
 }
 
-/** A simple trash bin. */
-export function makeTrashBin(): THREE.Group {
-  const g = new THREE.Group();
-  g.name = 'TrashBin';
-  const body = new THREE.Mesh(
-    geo('binBody', () => new THREE.CylinderGeometry(0.22, 0.18, 0.6, 12)),
-    metalDark(),
-  );
-  body.position.y = 0.3;
-  body.castShadow = true;
-  g.add(body);
-  return g;
+function binParts(): PropPart[] {
+  return [
+    part(
+      geo('binBody', () => new THREE.CylinderGeometry(0.22, 0.18, 0.6, 12)),
+      metalDark(),
+      [0, 0.3, 0],
+    ),
+  ];
+}
+
+const PART_BUILDERS: Record<PropType, () => PropPart[]> = {
+  palm: palmParts,
+  bench: benchParts,
+  hydrant: hydrantParts,
+  bin: binParts,
+};
+
+const partCache = new Map<PropType, PropPart[]>();
+
+/** The part list for a prop type (cached; geometries/materials are shared). */
+export function getPropParts(type: PropType): PropPart[] {
+  let parts = partCache.get(type);
+  if (!parts) {
+    parts = PART_BUILDERS[type]();
+    partCache.set(type, parts);
+  }
+  return parts;
 }
 
 /** Dispose all cached prop geometries/materials (call on teardown). */
 export function disposePropCache(): void {
   for (const v of cache.values()) v.dispose();
   cache.clear();
+  partCache.clear();
 }

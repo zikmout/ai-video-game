@@ -1,7 +1,8 @@
 # HANDOFF — Reprise de session (contexte resetté)
 
 > **Prompt de reprise pour l'utilisateur** : après un `/clear`, dire simplement :
-> _« Lis HANDOFF.md et continue le travail (prochaine étape : M6). »_
+> _« Lis HANDOFF.md et continue le travail. »_
+> (Roadmap M0→M6 TERMINÉE — il reste M6.5, bloqué sur les clés API, et les idées bonus.)
 
 ---
 
@@ -27,7 +28,7 @@ ton équipe allait coder 6 mois dessus »).
   milestone (`docs/screenshots/`), badges, table roadmap.
 - Langue : parler **français** à l'utilisateur ; code/docs repo en anglais.
 
-## 2. État actuel — M0 à M5.5 TERMINÉS et poussés
+## 2. État actuel — M0 à M6 TERMINÉS et poussés (roadmap complète)
 
 Tout est vert : `npm run typecheck`, `lint`, `build`.
 
@@ -40,6 +41,7 @@ Tout est vert : `npm run typecheck`, `lint`, `build`.
 | **M4** | Armes (pistolet/SMG/bazooka **visibles en main**, hitscan + roquette AoE), particules poolées, PV/destruction voitures (épaves calcinées fumantes), étoiles de recherche 0-5 avec décroissance, police qui poursuit et encercle | `systems/WeaponSystem.ts`, `systems/ParticleSystem.ts`, `systems/WantedSystem.ts`, `systems/PoliceSystem.ts`, `assets/procedural/guns.ts`, `systems/vehicleCollision.ts` |
 | **M5** | Mission « Rico » (appel téléphone → checkpoint beacon → vol de la Miura turquoise = crime `carStolen` 2★ → semer la police → livraison marina → +1 500 $ ; échec si Miura détruite + rappel/retry), radio en voiture (touche R, 3 stations Web Audio procédurales), HUD mission (téléphone, objectif+distance, bannière), blip objectif mini-map clampé au bord | `systems/MissionSystem.ts`, `entities/MissionMarker.ts`, `systems/RadioSystem.ts`, `assets/procedural/music.ts` |
 | **M5.5** | Aéroport à l'est de la grille (piste + marquages, hangar toit-tonneau, tour de contrôle, tarmac ; dessiné sur la mini-map), avion pilotable arcade : taxi, rotation au-delà de 26 m/s, montée/piqué/inclinaison, décrochage sous 18 m/s, plafond 160 m, crash (bâtiment ou impact vertical > 8 m/s) → explosion + épave noircie, HUD vitesse+altitude, sortie au sol uniquement | `world/Airport.ts`, `entities/Plane.ts`, `systems/PlaneController.ts`, `assets/procedural/plane.ts` |
+| **M6** | Cinématique d'intro (spline Catmull-Rom côte → downtown → derrière le joueur, letterbox+titre, skip par touche/clic, monde vivant dessous, gating des systèmes d'input pendant le vol) ; passe perf : pads trottoirs, sols ouverts et TOUS les props (palmier=11 pièces, banc=8…) en InstancedMesh par pièce → **1044 → 435 draw calls (−58 %)** ; `props.ts` refondu en API de pièces (`getPropParts`), plus de `Math.random` dedans | `systems/CinematicSystem.ts`, `world/City.ts` (buildPad/OpenGround/PropInstances), `assets/procedural/props.ts` |
 
 ### Architecture (résumé — détail dans `docs/ARCHITECTURE.md`)
 - Couches à dépendances descendantes : `ui → gameplay → entities/systems → world → engine → core`.
@@ -52,7 +54,8 @@ Tout est vert : `npm run typecheck`, `lint`, `build`.
 - Flags dev URL : `?play` (skip menu), `?drive` (spawn dans une voiture), `?hour=21` (heure forcée),
   `?mission` (Rico appelle tout de suite), `?mission=go` (saute l'appel, checkpoint direct),
   `?tp=x,z` (téléporte le joueur — cadrage de screenshots), `?fly` (aux commandes de l'avion),
-  `?fly=air` (en vol au-dessus de la ville, 60 m, 40 m/s).
+  `?fly=air` (en vol au-dessus de la ville, 60 m, 40 m/s), `?cine` (force la cinématique
+  d'intro — les flags d'autoplay dev la sautent par défaut).
 
 ## 3. Leçons de vérification (IMPORTANT — évite de re-débugger ça)
 
@@ -99,17 +102,19 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
    `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`, puis `git push origin main`.
 8. Résumé en français à l'utilisateur avec ce qui est prouvé/vérifié.
 
-## 5. PROCHAINE ÉTAPE : M6 — Polish & assets IA
+## 5. PROCHAINE ÉTAPE : la roadmap M0→M6 est TERMINÉE 🎉
 
-Dernier milestone de la roadmap :
-1. **Passe perf** : InstancedMesh pour les bâtiments/fenêtres si besoin, LOD/culling,
-   viser 60 fps stable (mesurer d'abord — le HUD affiche les fps).
-2. **Cinématique d'intro** : survol de la ville caméra scriptée au lancement (spline de
-   points de vue, skippable par clic), façon vidéo source.
-3. **Providers IA** : brancher les interfaces de `docs/AI_ASSETS.md` (Tripo/meshes,
-   ElevenLabs/voix-radio…) derrière les mêmes signatures que les assets procéduraux.
-   Sans clé API → fallback procédural silencieux (ne JAMAIS bloquer le jeu).
-4. Idées bonus vidéo : casino/intérieurs, cheat codes, mode photo.
+Ce qui reste, par ordre de valeur :
+1. **M6.5 — Providers IA** (BLOQUÉ sur les clés API payantes — décision utilisateur :
+   « plus tard ». Lui demander les clés avant de commencer). Brancher les interfaces de
+   `docs/AI_ASSETS.md` (Tripo/meshes, ElevenLabs/voix-radio…) derrière les mêmes
+   signatures que les assets procéduraux ; sans clé → fallback procédural silencieux.
+2. **Idées bonus de la vidéo source** : casino/intérieurs, cheat codes, mode photo,
+   missions supplémentaires (le `MissionSystem` est une machine à états réutilisable).
+3. **Perf, suite** : mesurer sur GPU réel (la probe `renderer.info` : voir §3) ; candidats
+   restants = fusion des bâtiments par matériau, LOD piétons/voitures, ombres.
+
+En cas de doute produit → demander à l'utilisateur.
 
 ## 6. Commandes utiles
 

@@ -44,6 +44,10 @@ export interface GameEvents {
   // Radio
   'radio:changed': { station: string | null };
 
+  // Intro cinematic
+  'cinematic:started': void;
+  'cinematic:ended': void;
+
   // Debug
   'debug:toggle': void;
 }

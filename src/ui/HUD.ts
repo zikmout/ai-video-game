@@ -29,6 +29,7 @@ export class HUD {
   private bannerEl!: HTMLDivElement;
   private radioEl!: HTMLDivElement;
   private altEl!: HTMLSpanElement;
+  private cineEl: HTMLDivElement;
   private bannerTimer: number | undefined;
   private radioTimer: number | undefined;
 
@@ -104,6 +105,27 @@ export class HUD {
     this.altEl = this.hud.querySelector('.alt') as HTMLSpanElement;
     this.hintEl = this.overlay.querySelector('.menu-card') as HTMLDivElement;
     this.setStars(0);
+
+    // Intro cinematic overlay (letterbox + title), sibling of the HUD so the
+    // HUD itself can stay hidden during the flyover.
+    this.cineEl = document.createElement('div');
+    this.cineEl.className = 'cine';
+    this.cineEl.style.display = 'none';
+    this.cineEl.innerHTML = `
+      <div class="cine-bar top"></div>
+      <div class="cine-bar bottom"></div>
+      <div class="cine-title">LOS ASETINOS</div>
+      <div class="cine-skip">Appuyez sur une touche pour passer</div>`;
+    root.appendChild(this.cineEl);
+  }
+
+  /** Letterbox + title during the intro flyover. */
+  showCinematic(): void {
+    this.cineEl.style.display = 'block';
+  }
+
+  hideCinematic(): void {
+    this.cineEl.style.display = 'none';
   }
 
   /** Wanted level, 0..5 — filled vs hollow stars, hidden when clean. */

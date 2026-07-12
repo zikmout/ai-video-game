@@ -25,6 +25,7 @@ import { MissionSystem } from '@/systems/MissionSystem';
 import { RadioSystem } from '@/systems/RadioSystem';
 import { Plane } from '@/entities/Plane';
 import { PlaneController } from '@/systems/PlaneController';
+import { CinematicSystem } from '@/systems/CinematicSystem';
 
 import { HUD } from '@/ui/HUD';
 import { MiniMap } from '@/ui/MiniMap';
@@ -59,7 +60,10 @@ export class Game {
   readonly mission: MissionSystem;
   readonly radio: RadioSystem;
   readonly planeController: PlaneController;
+  readonly cinematic: CinematicSystem;
   private readonly plane: Plane;
+  /** Whether the next fresh "play" should run the intro flyover. */
+  private pendingCinematic = true;
   private readonly loop: GameLoop;
   private readonly driveFocus = new THREE.Vector3();
   private wasDriving = false;
@@ -170,6 +174,8 @@ export class Game {
 
     // Order matters: vehicle enter/exit before on-foot movement; weapons before
     // the world reacts; traffic/crowd/police simulate; ambience last.
+    this.cinematic = new CinematicSystem(this.engine.camera, this.bus);
+
     this.systems.push(
       this.vehicleController,
       this.planeController,
@@ -183,6 +189,7 @@ export class Game {
       this.radio,
       particles,
       this.dayNight,
+      this.cinematic,
     );
 
     this.hud = new HUD(root, { onPlay: () => this.play() });
@@ -207,6 +214,11 @@ export class Game {
       this.hud.showBanner(`Mission échouée — ${reason}`, 'fail');
     });
     this.bus.on('radio:changed', ({ station }) => this.hud.setRadio(station));
+    this.bus.on('cinematic:started', () => this.hud.showCinematic());
+    this.bus.on('cinematic:ended', () => {
+      this.hud.hideCinematic();
+      this.hud.showHUD();
+    });
 
     this.loop = new GameLoop(
       {
@@ -233,7 +245,11 @@ export class Game {
 
     // Dev/demo convenience via query params.
     const params = new URLSearchParams(window.location.search);
-    if (params.has('play') || params.has('drive') || params.has('mission') || params.has('fly')) {
+    const autoplay =
+      params.has('play') || params.has('drive') || params.has('mission') || params.has('fly');
+    // Dev/demo autoplay skips the intro flyover; `?cine` forces it back on.
+    this.pendingCinematic = params.has('cine') || !autoplay;
+    if (autoplay || params.has('cine')) {
       this.play();
     }
     // `?fly` boards the runway plane; `?fly=air` starts mid-flight over the
@@ -299,9 +315,16 @@ export class Game {
   private play(): void {
     const resuming = this.state === 'paused';
     this.hud.hideMenu();
-    this.hud.showHUD();
     this.state = 'playing';
     this.input.requestPointerLock();
+
+    // First fresh start runs the intro flyover; the HUD appears when it ends.
+    if (!resuming && this.pendingCinematic) {
+      this.pendingCinematic = false;
+      this.cinematic.start(this.player.position);
+    } else if (!this.cinematic.active) {
+      this.hud.showHUD();
+    }
     this.bus.emit(resuming ? 'game:resumed' : 'game:started', undefined);
   }
 
@@ -312,12 +335,25 @@ export class Game {
     this.bus.emit('game:paused', undefined);
   }
 
+  /** True for systems that read player input (gated during the cinematic). */
+  private isInputSystem(s: System): boolean {
+    return (
+      s === this.playerController ||
+      s === this.vehicleController ||
+      s === this.planeController ||
+      s === this.weapons
+    );
+  }
+
   private fixedUpdate(dt: number): void {
     if (this.state !== 'playing') return;
     const inControl = this.vehicleController.isDriving || this.planeController.isFlying;
+    const cine = this.cinematic.active;
     for (const s of this.systems) {
       // Skip on-foot movement while the player is in a car or the plane.
       if (inControl && s === this.playerController) continue;
+      // During the intro flyover the world lives, but the player can't act.
+      if (cine && this.isInputSystem(s)) continue;
       s.fixedUpdate?.(dt);
     }
   }
@@ -325,10 +361,12 @@ export class Game {
   private update(dt: number): void {
     const driving = this.vehicleController.isDriving;
     const inControl = driving || this.planeController.isFlying;
+    const cine = this.cinematic.active;
 
     if (this.state === 'playing') {
       for (const s of this.systems) {
         if (inControl && s === this.playerController) continue;
+        if (cine && this.isInputSystem(s)) continue;
         s.update?.(dt);
       }
     }
@@ -350,6 +388,12 @@ export class Game {
 
   /** Route the camera (chase vs orbit) and update contextual HUD. */
   private updateCameraAndHud(dt: number, driving: boolean): void {
+    // The intro cinematic owns the camera outright.
+    if (this.cinematic.active) {
+      this.world.update(this.engine.camera.position, this.engine.camera.position);
+      return;
+    }
+
     const flying = this.planeController.isFlying;
 
     if (driving && this.vehicleController.vehicle) {

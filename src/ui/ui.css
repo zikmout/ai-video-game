@@ -356,6 +356,69 @@ canvas {
   }
 }
 
+/* ── Intro cinematic ─────────────────────────────────────────────────────── */
+.cine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.cine .cine-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 11%;
+  background: #000;
+}
+
+.cine .cine-bar.top {
+  top: 0;
+}
+
+.cine .cine-bar.bottom {
+  bottom: 0;
+}
+
+.cine .cine-title {
+  position: absolute;
+  bottom: 16%;
+  left: 6%;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: cine-title 7s ease forwards;
+}
+
+@keyframes cine-title {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.cine .cine-skip {
+  position: absolute;
+  bottom: 3.5%;
+  right: 24px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
 .hud .radio-label {
   position: absolute;
   bottom: 96px;

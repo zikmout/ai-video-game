@@ -49,10 +49,21 @@ clean, studio-grade foundation. Each milestone is meant to be independently play
 - [x] Flyable plane: arcade flight (taxi, takeoff threshold, climb/dive/bank,
       stall, altitude ceiling), crash explosions on buildings/hard landings
 
-## M6 — Polish & AI assets
+## ✅ M6 — Polish
 
-- [ ] Swap procedural placeholders for AI-generated models/textures/audio
-- [ ] Intro cinematic
-- [ ] Performance pass (instancing, LOD, culling)
+- [x] Intro cinematic: letterboxed camera flyover (Catmull-Rom spline from the
+      coast to street level behind the player), title card, skippable, world
+      keeps simulating underneath
+- [x] Performance pass: sidewalk pads, open grounds and all street props
+      rendered as InstancedMeshes — 1044 → 435 draw calls (−58 %) on the
+      spawn-street view
+
+## ⏸ M6.5 — AI assets (awaiting provider API keys)
+
+- [ ] Swap procedural placeholders for AI-generated models/textures/audio.
+      Deliberately deferred: the provider design is ready (see
+      [AI_ASSETS.md](AI_ASSETS.md)) but generation requires paid API keys,
+      which the project owner will configure later. Everything already runs
+      behind procedural defaults, so this swap needs no game-code changes.
 
 See [AI_ASSETS.md](AI_ASSETS.md) for how AI-generated assets slot in throughout.

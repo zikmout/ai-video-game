@@ -12,7 +12,7 @@ engineered to a studio-grade standard.
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Status](https://img.shields.io/badge/milestone-M5.5%20·%20Airport%20%26%20flyable%20plane-35d0a5)
+![Status](https://img.shields.io/badge/roadmap-M0→M6%20complete-35d0a5)
 
 <br/>
 
@@ -37,6 +37,12 @@ configured — *without touching game code*.
 
 ## ✨ Highlights
 
+- 🎬 **Intro cinematic** — press Play and a letterboxed camera flyover sweeps
+  from high over the coast, across downtown, down to street level behind you —
+  while traffic and pedestrians live their lives below. Any key skips it.
+- ⚡ **Instanced city** — sidewalk pads, park/beach/plaza grounds and every
+  street prop render as instanced parts: **1044 → 435 draw calls (−58 %)** for
+  the same scene.
 - ✈️ **Airport & flyable plane** — an airfield east of the city (runway with
   painted markings, barrel-roof hangar, control tower) and a light aircraft
   with arcade flight: taxi, rotate past takeoff speed, climb/dive/bank, stall
@@ -79,8 +85,12 @@ configured — *without touching game code*.
 <div align="center">
 <table>
 <tr>
+<td width="50%"><img src="docs/screenshots/m6-cinematic.png" alt="Letterboxed aerial flyover of the whole city during the intro cinematic" width="100%"/><br/><sub><b>Intro cinematic</b> — letterboxed flyover from the coast to the streets</sub></td>
 <td width="50%"><img src="docs/screenshots/m55-flying.png" alt="Flying the plane over downtown, speed and altitude HUD" width="100%"/><br/><sub><b>Flying</b> — banking over downtown, speed + altitude readout</sub></td>
+</tr>
+<tr>
 <td width="50%"><img src="docs/screenshots/m55-airport.png" alt="The airfield: runway markings, parked plane, hangar" width="100%"/><br/><sub><b>Airport</b> — runway, hangar and the plane, mapped on the mini-map</sub></td>
+<td width="50%"><img src="docs/screenshots/aerial.png" alt="Aerial view of the districts" width="100%"/><br/><sub><b>Districts</b> — downtown, residential rings, parks and the beach</sub></td>
 </tr>
 <tr>
 <td width="50%"><img src="docs/screenshots/m5-phone-call.png" alt="Rico's phone call dialog in the street" width="100%"/><br/><sub><b>Mission</b> — Rico calls: steal the Miura, deliver it to the marina</sub></td>
@@ -112,7 +122,8 @@ Open the URL Vite prints (default http://localhost:5173) and press **▶ Jouer**
 > Tips: `?drive` drops you straight into a car · `?hour=21` forces a time of day
 > (try the city at night) · `?mission` makes Rico call right away (`?mission=go`
 > skips the call and puts the checkpoint straight up) · `?fly` boards the plane
-> on the runway (`?fly=air` starts you mid-flight over the city).
+> on the runway (`?fly=air` starts you mid-flight over the city) · dev autoplay
+> flags skip the intro cinematic; `?cine` forces it.
 
 ### Controls
 
@@ -152,6 +163,8 @@ Open the URL Vite prints (default http://localhost:5173) and press **▶ Jouer**
 
 The build follows the iteration path of the source experiment, on a clean base.
 Each milestone is independently playable — see [docs/ROADMAP.md](docs/ROADMAP.md).
+A full milestone-by-milestone build report (in French) lives in
+[docs/COMPTE-RENDU.md](docs/COMPTE-RENDU.md).
 
 | Milestone | Theme | Status |
 | --------- | ----- | ------ |
@@ -162,7 +175,8 @@ Each milestone is independently playable — see [docs/ROADMAP.md](docs/ROADMAP.
 | **M4** | Weapons, police & wanted system | ✅ done |
 | **M5** | First mission ("Rico") + in-car radio | ✅ done |
 | **M5.5** | Airport + flyable plane | ✅ done |
-| **M6** | AI-generated assets, cinematics, perf pass | ⏳ next |
+| **M6** | Intro cinematic + performance pass (instancing) | ✅ done |
+| **M6.5** | Swap procedural assets for AI-generated ones | ⏸ awaiting API keys |
 
 ## 🏛️ Architecture
 
