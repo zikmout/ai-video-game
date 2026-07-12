@@ -21,6 +21,8 @@ import { ParticleSystem } from '@/systems/ParticleSystem';
 import { WeaponSystem } from '@/systems/WeaponSystem';
 import { WantedSystem } from '@/systems/WantedSystem';
 import { PoliceSystem } from '@/systems/PoliceSystem';
+import { MissionSystem } from '@/systems/MissionSystem';
+import { RadioSystem } from '@/systems/RadioSystem';
 
 import { HUD } from '@/ui/HUD';
 import { MiniMap } from '@/ui/MiniMap';
@@ -51,6 +53,9 @@ export class Game {
   private readonly miniMap: MiniMap;
   private readonly dayNight: DayNightCycle;
   private readonly weapons: WeaponSystem;
+  /** Public for dev probes: mission phase and radio station are inspectable. */
+  readonly mission: MissionSystem;
+  readonly radio: RadioSystem;
   private readonly loop: GameLoop;
   private readonly driveFocus = new THREE.Vector3();
   private wasDriving = false;
@@ -133,6 +138,16 @@ export class Game {
       this.bus,
     );
 
+    this.mission = new MissionSystem(
+      this.engine.scene,
+      this.vehicles,
+      () => this.currentFocusPosition(),
+      () => this.vehicleController.vehicle,
+      this.bus,
+    );
+
+    this.radio = new RadioSystem(this.input, () => this.vehicleController.isDriving, this.bus);
+
     // Order matters: vehicle enter/exit before on-foot movement; weapons before
     // the world reacts; traffic/crowd/police simulate; ambience last.
     this.systems.push(
@@ -143,6 +158,8 @@ export class Game {
       crowd,
       police,
       wanted,
+      this.mission,
+      this.radio,
       particles,
       this.dayNight,
     );
@@ -151,6 +168,24 @@ export class Game {
     this.miniMap = new MiniMap(this.hud.getMinimapRoot(), this.world);
     this.hud.setMoney(this.money);
     this.bus.on('wanted:changed', ({ level }) => this.hud.setStars(level));
+
+    // Mission + radio flow: systems talk on the bus, Game routes to the HUD.
+    this.bus.on('mission:call', ({ caller, lines }) => this.hud.showPhoneCall(caller, lines));
+    this.bus.on('mission:objective', ({ text }) => {
+      this.hud.hidePhoneCall();
+      this.hud.setObjective(text);
+      if (!text) this.hud.setObjectiveDistance(null);
+    });
+    this.bus.on('mission:completed', ({ reward }) => {
+      this.money += reward;
+      this.hud.setMoney(this.money);
+      this.bus.emit('money:changed', { amount: this.money, delta: reward });
+      this.hud.showBanner(`Mission accomplie — +$${reward.toLocaleString('en-US')}`, 'success');
+    });
+    this.bus.on('mission:failed', ({ reason }) => {
+      this.hud.showBanner(`Mission échouée — ${reason}`, 'fail');
+    });
+    this.bus.on('radio:changed', ({ station }) => this.hud.setRadio(station));
 
     this.loop = new GameLoop(
       {
@@ -177,8 +212,19 @@ export class Game {
 
     // Dev/demo convenience via query params.
     const params = new URLSearchParams(window.location.search);
-    if (params.has('play') || params.has('drive')) {
+    if (params.has('play') || params.has('drive') || params.has('mission')) {
       this.play();
+    }
+    // `?mission` makes Rico call immediately; `?mission=go` also skips the call
+    // so the checkpoint marker is up right away (screenshots/probes).
+    if (params.has('mission')) {
+      this.mission.startNow(params.get('mission') === 'go');
+    }
+    // `?tp=x,z` teleports the player (framing screenshots at exact spots).
+    const tp = params.get('tp');
+    if (tp) {
+      const [x, z] = tp.split(',').map(Number);
+      if (Number.isFinite(x) && Number.isFinite(z)) this.player.position.set(x!, 0, z!);
     }
     if (params.has('drive')) {
       // Teleport the player onto the nearest parked car and enter it, so the
@@ -298,7 +344,11 @@ export class Game {
     const center = driving && this.vehicleController.vehicle
       ? this.vehicleController.vehicle.position
       : this.player.position;
-    this.miniMap.render(center, heading, this.vehicles);
+    this.miniMap.render(center, heading, this.vehicles, this.mission.targetPosition, this.mission.car);
+
+    // Live distance readout next to the mission objective.
+    const target = this.mission.targetPosition;
+    this.hud.setObjectiveDistance(target ? target.distanceTo(center) : null);
 
     // Weapon label follows the equipped weapon (hidden while driving).
     const weaponName = driving ? null : this.weapons.weaponName;

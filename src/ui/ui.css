@@ -246,3 +246,117 @@ canvas {
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+
+/* ── Mission UI ───────────────────────────────────────────────────────────── */
+.hud .objective {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  background: var(--panel);
+  border: 1px solid rgba(255, 210, 74, 0.35);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hud .objective .objective-dist {
+  color: #ffd24a;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud .phonecall {
+  position: absolute;
+  bottom: 24%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 460px;
+  padding: 14px 20px;
+  background: var(--panel);
+  border: 1px solid rgba(53, 208, 165, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+}
+
+.hud .phonecall .phone-icon {
+  font-size: 1.6rem;
+  animation: phone-ring 0.7s ease-in-out infinite;
+}
+
+@keyframes phone-ring {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(12deg);
+  }
+}
+
+.hud .phonecall .phone-caller {
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.hud .phonecall .phone-lines p {
+  margin: 0 0 4px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.hud .banner {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 34px;
+  border-radius: 16px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  background: var(--panel);
+  white-space: nowrap;
+  animation: banner-pop 0.35s ease;
+}
+
+.hud .banner.success {
+  color: #4ae08a;
+  border: 1px solid rgba(74, 224, 138, 0.5);
+}
+
+.hud .banner.fail {
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.5);
+}
+
+@keyframes banner-pop {
+  from {
+    transform: translateX(-50%) scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.hud .radio-label {
+  position: absolute;
+  bottom: 96px;
+  right: 30px;
+  padding: 6px 14px;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}

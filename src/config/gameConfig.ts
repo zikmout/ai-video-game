@@ -135,8 +135,39 @@ export const GameConfig = {
     /** Seconds per star lost once decaying. */
     decayPerStar: 6,
     /** Crime severities → wanted points. 100 points = 1 star. */
-    points: { gunfire: 40, pedKilled: 120, vehicleDestroyed: 160, copRammed: 90 },
+    points: { gunfire: 40, pedKilled: 120, vehicleDestroyed: 160, copRammed: 90, carStolen: 200 },
     maxStars: 5,
+  },
+
+  mission: {
+    /** The first story mission: steal Rico's turquoise Miura and deliver it. */
+    rico: {
+      /** Delay after the game starts before Rico calls (s). */
+      callDelay: 8,
+      /** How long the phone-call dialog stays on screen (s). */
+      callDuration: 9,
+      /** Paint of the mission car (turquoise "Miura"). */
+      carColor: 0x1fc7b6,
+      /** Where the Miura is parked (world XZ) and its heading. */
+      pickup: { x: 102, z: -8.5, heading: Math.PI / 2 },
+      /** Delivery parking spot (world XZ). */
+      delivery: { x: -114, z: 156 },
+      /** Radius to validate the "reach the marker" objective (m). */
+      checkpointRadius: 5,
+      /** Radius to validate the delivery (m). */
+      deliverRadius: 6,
+      /** Cash reward on completion. */
+      reward: 1500,
+      /** Delay before Rico calls again after a failed mission (s). */
+      retryDelay: 18,
+    },
+  },
+
+  radio: {
+    /** Master gain applied to every station (0..1). */
+    volume: 0.4,
+    /** Seconds of audio scheduled ahead of the clock. */
+    lookahead: 0.3,
   },
 
   police: {

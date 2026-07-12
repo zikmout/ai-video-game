@@ -22,6 +22,14 @@ export class HUD {
   private minimapRoot!: HTMLDivElement;
   private starsEl!: HTMLDivElement;
   private weaponEl!: HTMLDivElement;
+  private phoneEl!: HTMLDivElement;
+  private objectiveEl!: HTMLDivElement;
+  private objectiveTextEl!: HTMLSpanElement;
+  private objectiveDistEl!: HTMLSpanElement;
+  private bannerEl!: HTMLDivElement;
+  private radioEl!: HTMLDivElement;
+  private bannerTimer: number | undefined;
+  private radioTimer: number | undefined;
 
   constructor(root: HTMLElement, callbacks: HUDCallbacks) {
     // Start / pause menu overlay.
@@ -59,6 +67,19 @@ export class HUD {
       <div class="speedo" style="display:none">
         <span class="kmh">0</span><span class="unit">km/h</span>
       </div>
+      <div class="radio-label" style="display:none"></div>
+      <div class="objective" style="display:none">
+        <span class="objective-text"></span>
+        <span class="objective-dist"></span>
+      </div>
+      <div class="phonecall" style="display:none">
+        <div class="phone-icon">📞</div>
+        <div class="phone-body">
+          <div class="phone-caller"></div>
+          <div class="phone-lines"></div>
+        </div>
+      </div>
+      <div class="banner" style="display:none"></div>
       <div class="minimap-wrap"></div>`;
     this.hud.style.display = 'none';
     root.appendChild(this.hud);
@@ -73,6 +94,12 @@ export class HUD {
     this.minimapRoot = this.hud.querySelector('.minimap-wrap') as HTMLDivElement;
     this.starsEl = this.hud.querySelector('.stars') as HTMLDivElement;
     this.weaponEl = this.hud.querySelector('.weapon') as HTMLDivElement;
+    this.phoneEl = this.hud.querySelector('.phonecall') as HTMLDivElement;
+    this.objectiveEl = this.hud.querySelector('.objective') as HTMLDivElement;
+    this.objectiveTextEl = this.hud.querySelector('.objective-text') as HTMLSpanElement;
+    this.objectiveDistEl = this.hud.querySelector('.objective-dist') as HTMLSpanElement;
+    this.bannerEl = this.hud.querySelector('.banner') as HTMLDivElement;
+    this.radioEl = this.hud.querySelector('.radio-label') as HTMLDivElement;
     this.hintEl = this.overlay.querySelector('.menu-card') as HTMLDivElement;
     this.setStars(0);
   }
@@ -99,6 +126,55 @@ export class HUD {
     }
     this.weaponEl.style.display = 'block';
     this.weaponEl.textContent = name;
+  }
+
+  /** Incoming phone call dialog (mission dialogue). */
+  showPhoneCall(caller: string, lines: string[]): void {
+    (this.phoneEl.querySelector('.phone-caller') as HTMLElement).textContent = caller;
+    (this.phoneEl.querySelector('.phone-lines') as HTMLElement).innerHTML = lines
+      .map((l) => `<p>${l}</p>`)
+      .join('');
+    this.phoneEl.style.display = 'flex';
+  }
+
+  hidePhoneCall(): void {
+    this.phoneEl.style.display = 'none';
+  }
+
+  /** Current mission objective line; null hides it. */
+  setObjective(text: string | null): void {
+    if (!text) {
+      this.objectiveEl.style.display = 'none';
+      return;
+    }
+    this.objectiveTextEl.textContent = text;
+    this.objectiveEl.style.display = 'block';
+  }
+
+  /** Distance to the objective target in metres; null hides the readout. */
+  setObjectiveDistance(metres: number | null): void {
+    this.objectiveDistEl.textContent = metres === null ? '' : ` — ${Math.round(metres)} m`;
+  }
+
+  /** Big centre banner (mission complete/failed); hides itself after a beat. */
+  showBanner(text: string, kind: 'success' | 'fail'): void {
+    this.bannerEl.textContent = text;
+    this.bannerEl.className = `banner ${kind}`;
+    this.bannerEl.style.display = 'block';
+    window.clearTimeout(this.bannerTimer);
+    this.bannerTimer = window.setTimeout(() => {
+      this.bannerEl.style.display = 'none';
+    }, 4500);
+  }
+
+  /** Radio station toast next to the speedometer; null means "radio off". */
+  setRadio(station: string | null): void {
+    this.radioEl.textContent = station ? `📻 ${station}` : '📻 Radio coupée';
+    this.radioEl.style.display = 'block';
+    window.clearTimeout(this.radioTimer);
+    this.radioTimer = window.setTimeout(() => {
+      this.radioEl.style.display = 'none';
+    }, 2500);
   }
 
   /** Container the MiniMap canvas should mount into. */

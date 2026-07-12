@@ -22,11 +22,22 @@ export interface GameEvents {
 
   // Combat / crime
   'gun:fired': { position: [number, number, number] };
-  'crime:committed': { kind: 'gunfire' | 'pedKilled' | 'vehicleDestroyed' | 'copRammed' };
+  'crime:committed': {
+    kind: 'gunfire' | 'pedKilled' | 'vehicleDestroyed' | 'copRammed' | 'carStolen';
+  };
 
-  // World / progression (used by later milestones)
+  // World / progression
   'wanted:changed': { level: number };
   'money:changed': { amount: number; delta: number };
+
+  // Missions
+  'mission:call': { caller: string; lines: string[] };
+  'mission:objective': { text: string | null };
+  'mission:completed': { id: string; reward: number };
+  'mission:failed': { id: string; reason: string };
+
+  // Radio
+  'radio:changed': { station: string | null };
 
   // Debug
   'debug:toggle': void;

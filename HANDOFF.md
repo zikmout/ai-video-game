@@ -1,7 +1,7 @@
 # HANDOFF — Reprise de session (contexte resetté)
 
 > **Prompt de reprise pour l'utilisateur** : après un `/clear`, dire simplement :
-> _« Lis HANDOFF.md et continue le travail (prochaine étape : M5). »_
+> _« Lis HANDOFF.md et continue le travail (prochaine étape : M5.5). »_
 
 ---
 
@@ -27,9 +27,9 @@ ton équipe allait coder 6 mois dessus »).
   milestone (`docs/screenshots/`), badges, table roadmap.
 - Langue : parler **français** à l'utilisateur ; code/docs repo en anglais.
 
-## 2. État actuel — M0 à M4 TERMINÉS et poussés
+## 2. État actuel — M0 à M5 TERMINÉS et poussés
 
-Dernier commit poussé : `812286e` (M4). Tout est vert : `npm run typecheck`, `lint`, `build`.
+Tout est vert : `npm run typecheck`, `lint`, `build`.
 
 | Milestone | Contenu | Fichiers clés |
 |---|---|---|
@@ -38,6 +38,7 @@ Dernier commit poussé : `812286e` (M4). Tout est vert : `npm run typecheck`, `l
 | **M2** | Voitures pilotables (modèle bicycle, E pour monter/sortir, caméra chase, compteur km/h), trafic autonome (16 voitures, voies, virages, freinage obstacle) | `entities/Vehicle.ts`, `systems/VehicleController.ts`, `systems/TrafficSystem.ts`, `assets/procedural/car.ts` |
 | **M3** | 40 piétons animés (marche/fuite), cycle jour/nuit (soleil, palette ciel/brouillard, lampadaires au crépuscule), mini-map canvas, HUD horloge+argent | `systems/CrowdSystem.ts`, `systems/DayNightCycle.ts`, `ui/MiniMap.ts`, `entities/Pedestrian.ts` |
 | **M4** | Armes (pistolet/SMG/bazooka **visibles en main**, hitscan + roquette AoE), particules poolées, PV/destruction voitures (épaves calcinées fumantes), étoiles de recherche 0-5 avec décroissance, police qui poursuit et encercle | `systems/WeaponSystem.ts`, `systems/ParticleSystem.ts`, `systems/WantedSystem.ts`, `systems/PoliceSystem.ts`, `assets/procedural/guns.ts`, `systems/vehicleCollision.ts` |
+| **M5** | Mission « Rico » (appel téléphone → checkpoint beacon → vol de la Miura turquoise = crime `carStolen` 2★ → semer la police → livraison marina → +1 500 $ ; échec si Miura détruite + rappel/retry), radio en voiture (touche R, 3 stations Web Audio procédurales), HUD mission (téléphone, objectif+distance, bannière), blip objectif mini-map clampé au bord | `systems/MissionSystem.ts`, `entities/MissionMarker.ts`, `systems/RadioSystem.ts`, `assets/procedural/music.ts` |
 
 ### Architecture (résumé — détail dans `docs/ARCHITECTURE.md`)
 - Couches à dépendances descendantes : `ui → gameplay → entities/systems → world → engine → core`.
@@ -47,7 +48,9 @@ Dernier commit poussé : `812286e` (M4). Tout est vert : `npm run typecheck`, `l
 - Communication inter-systèmes par `EventBus` typé (`core/events.ts`) :
   `crime:committed`, `wanted:changed`, `gun:fired`, `vehicle:destroyed`, etc.
 - Tout est déterministe depuis `GameConfig.seed` (`config/gameConfig.ts` = tous les tunables).
-- Flags dev URL : `?play` (skip menu), `?drive` (spawn dans une voiture), `?hour=21` (heure forcée).
+- Flags dev URL : `?play` (skip menu), `?drive` (spawn dans une voiture), `?hour=21` (heure forcée),
+  `?mission` (Rico appelle tout de suite), `?mission=go` (saute l'appel, checkpoint direct),
+  `?tp=x,z` (téléporte le joueur — cadrage de screenshots).
 
 ## 3. Leçons de vérification (IMPORTANT — évite de re-débugger ça)
 
@@ -75,6 +78,11 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 - `pkill -f "Google Chrome"` si un run headless traîne ; **une seule instance** Chrome
   headless à la fois (elles se marchent dessus).
 - Attention au `&` dans les URLs en Bash : mettre l'URL dans une variable quotée.
+- **La caméra au repos regarde vers +Z** (pas -Z) : pour cadrer un objet en screenshot
+  avec `?tp=x,z`, se placer à un z PLUS PETIT que la cible (l'objet doit être à +Z du joueur).
+- Les probes « unité » (machine à états, radio) n'ont pas besoin du Game complet :
+  instancier le System directement avec un `EventBus` + `THREE.Scene` nus dans un module
+  `src/dev/probe*.ts` importé par la page probe → exécution en <1 s au lieu de ~22 s.
 
 ## 4. Workflow par milestone (suivi jusqu'ici — le garder)
 
@@ -89,23 +97,17 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
    `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`, puis `git push origin main`.
 8. Résumé en français à l'utilisateur avec ce qui est prouvé/vérifié.
 
-## 5. PROCHAINE ÉTAPE : M5 — Contenu (la mission « Rico »)
+## 5. PROCHAINE ÉTAPE : M5.5 — Avion + aéroport
 
-Ce que fait la vidéo (à reproduire, adapté) :
-1. **Mission « Rico »** : le joueur reçoit un « appel » (UI de téléphone/dialogue), doit
-   rejoindre un point marqué (checkpoint jaune + distance affichée), voler une voiture
-   précise (Miura turquoise garée devant la banque), ce qui déclenche 2 étoiles, semer la
-   police, livrer la voiture à un parking → récompense en argent (`money:changed` existe
-   déjà dans les events).
-   - Suggéré : `systems/MissionSystem.ts` (machine à états par objectifs), marqueurs 3D
-     (cylindre/beacon émissif + blip mini-map), UI de dialogue dans le HUD.
-2. **Radio** : touche `R` en voiture, pistes générées en Web Audio procédural (pas d'API
-   payante) — voir le pattern provider de `docs/AI_ASSETS.md` pour brancher ElevenLabs plus tard.
-3. **Avion pilotable + aéroport** (peut glisser en M5.5) : zone aéroport en bord de ville,
-   avion (modèle procédural), physique de vol arcade simple, explosion au crash (les
-   particules existent).
+La mission « Rico » et la radio sont faites (M5). Reste, comme dans la vidéo :
+- **Zone aéroport** en bord de ville (piste + hangar simples, hors de la grille ou sur
+  des blocs ouverts en bordure).
+- **Avion pilotable** : modèle procédural (`assets/procedural/plane.ts`), physique de vol
+  arcade (`systems/PlaneController.ts` sur le modèle de `VehicleController`) — décollage
+  au-delà d'une vitesse seuil, tangage/roulis simples, altitude plafonnée.
+- **Explosion au crash** (le `ParticleSystem` et `vehicle:destroyed` existent déjà).
 
-Puis **M6** : swap providers IA, cinématique, passe perf (instancing/LOD).
+Puis **M6** : swap providers IA, cinématique d'intro, passe perf (instancing/LOD).
 
 ## 6. Commandes utiles
 

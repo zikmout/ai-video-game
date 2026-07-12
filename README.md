@@ -12,7 +12,7 @@ engineered to a studio-grade standard.
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Status](https://img.shields.io/badge/milestone-M4%20·%20Weapons%20%26%20police-35d0a5)
+![Status](https://img.shields.io/badge/milestone-M5%20·%20Mission%20%22Rico%22%20%26%20radio-35d0a5)
 
 <br/>
 
@@ -37,6 +37,14 @@ configured — *without touching game code*.
 
 ## ✨ Highlights
 
+- 📞 **The "Rico" mission** — your phone rings a few seconds in: steal a
+  turquoise Miura parked downtown, shake the 2-star pursuit it triggers, and
+  deliver it to the marina parking for $1,500. Beacon checkpoints, a mini-map
+  objective blip with live distance, phone-call dialogue, rewards — and if the
+  Miura burns, Rico calls back to let you retry.
+- 📻 **In-car radio** — press `R` while driving to cycle three procedurally
+  synthesized stations (Web Audio, 16-step loops: kick, hats, bass, lead) —
+  synthwave on *Asetinos FM*, beach skank on *Radio Playa*, breakneck *K-BOOM*.
 - 🔫 **Weapons** — pistol, SMG and bazooka (visible in hand), hitscan shots with
   muzzle flash and impact sparks, and rockets with an area-of-effect blast.
 - 🚓 **Wanted system & police** — crimes raise your star level; patrol cars with
@@ -67,6 +75,10 @@ configured — *without touching game code*.
 <div align="center">
 <table>
 <tr>
+<td width="50%"><img src="docs/screenshots/m5-phone-call.png" alt="Rico's phone call dialog in the street" width="100%"/><br/><sub><b>Mission</b> — Rico calls: steal the Miura, deliver it to the marina</sub></td>
+<td width="50%"><img src="docs/screenshots/m5-mission-marker.png" alt="Yellow beacon checkpoint over the turquoise Miura, objective HUD with distance" width="100%"/><br/><sub><b>Checkpoint</b> — beacon over the Miura, objective + live distance, mini-map blip</sub></td>
+</tr>
+<tr>
 <td width="50%"><img src="docs/screenshots/action.png" alt="Five wanted stars, bazooka equipped, burning police wrecks" width="100%"/><br/><sub><b>Action</b> — 5 stars, bazooka out, smoking police wrecks after a rocket blast</sub></td>
 <td width="50%"><img src="docs/screenshots/night.png" alt="The same street at night, streetlights on" width="100%"/><br/><sub><b>Night</b> — streetlights on, lit windows, night palette</sub></td>
 </tr>
@@ -90,7 +102,8 @@ Open the URL Vite prints (default http://localhost:5173) and press **▶ Jouer**
 > (handy for demos and screenshots).
 
 > Tips: `?drive` drops you straight into a car · `?hour=21` forces a time of day
-> (try the city at night).
+> (try the city at night) · `?mission` makes Rico call right away (`?mission=go`
+> skips the call and puts the checkpoint straight up).
 
 ### Controls
 
@@ -114,6 +127,7 @@ Open the URL Vite prints (default http://localhost:5173) and press **▶ Jouer**
 | Accelerate / reverse| `W` / `S`      |
 | Steer               | `A` / `D`      |
 | Handbrake           | `Space`        |
+| Radio (cycle)       | `R`            |
 | Exit car            | `E` / `F`      |
 
 ## 🗺️ Roadmap
@@ -128,7 +142,8 @@ Each milestone is independently playable — see [docs/ROADMAP.md](docs/ROADMAP.
 | **M2** | Drivable vehicles + autonomous traffic | ✅ done |
 | **M3** | Pedestrians & world simulation (day/night, mini-map) | ✅ done |
 | **M4** | Weapons, police & wanted system | ✅ done |
-| **M5** | Missions, radio, interiors, flyable plane | ⏳ next |
+| **M5** | First mission ("Rico") + in-car radio | ✅ done |
+| **M5.5** | Airport + flyable plane | ⏳ next |
 | **M6** | AI-generated assets, cinematics, perf pass | ⬜ |
 
 ## 🏛️ Architecture

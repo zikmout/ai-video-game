@@ -37,11 +37,15 @@ clean, studio-grade foundation. Each milestone is meant to be independently play
 - [x] Police + wanted system (stars, decay, pursuit AI that brakes into turns)
 - [x] Particles (muzzle flash, impacts, explosions), burning vehicle wrecks
 
-## M5 — Content
+## ✅ M5 — Content
 
-- [ ] First mission ("Rico") with objectives and rewards
-- [ ] Radio with music tracks
-- [ ] Interior locations (casino, airport) + flyable plane
+- [x] First mission ("Rico") with objectives and rewards: phone call, beacon
+      checkpoints, car theft → 2-star pursuit, delivery, $ reward, retry on fail
+- [x] Radio with music tracks (3 procedurally synthesized Web Audio stations)
+
+## M5.5 — Wings
+
+- [ ] Airport zone + flyable plane (arcade flight, crash explosion)
 
 ## M6 — Polish & AI assets
 

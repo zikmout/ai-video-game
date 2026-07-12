@@ -87,8 +87,17 @@ export class MiniMap {
    * @param playerPos world position to centre on
    * @param heading   yaw the player/car faces (radians); map rotates so it's up
    * @param vehicles  cars to plot as blips
+   * @param objective mission target — drawn as a blip, clamped to the map edge
+   *                  when out of range so it always shows the direction to go
+   * @param missionCar car to tint in mission colours (the Miura), if any
    */
-  render(playerPos: THREE.Vector3, heading: number, vehicles: readonly Vehicle[]): void {
+  render(
+    playerPos: THREE.Vector3,
+    heading: number,
+    vehicles: readonly Vehicle[],
+    objective: THREE.Vector3 | null = null,
+    missionCar: Vehicle | null = null,
+  ): void {
     const ctx = this.ctx;
     const r = this.size / 2;
     const scale = r / this.worldRadius; // base-metres → minimap pixels
@@ -113,13 +122,41 @@ export class MiniMap {
     // Vehicle blips.
     for (const v of vehicles) {
       const [bx, bz] = this.worldToBase(v.position.x, v.position.z);
-      ctx.fillStyle = v.occupied ? '#35d0a5' : '#ffd24a';
+      ctx.fillStyle = v === missionCar ? '#1fc7b6' : v.occupied ? '#35d0a5' : '#ffd24a';
       ctx.beginPath();
-      ctx.arc(bx, bz, 6 / baseScale, 0, Math.PI * 2);
+      ctx.arc(bx, bz, (v === missionCar ? 8 : 6) / baseScale, 0, Math.PI * 2);
       ctx.fill();
     }
 
     ctx.restore();
+
+    // Objective blip, drawn in screen space so it can clamp to the map edge
+    // (pointing the way) when the target is beyond the visible radius.
+    if (objective) {
+      const dx = objective.x - playerPos.x;
+      const dz = objective.z - playerPos.z;
+      // Rotate into map space (heading points up).
+      const cos = Math.cos(-heading);
+      const sin = Math.sin(-heading);
+      let mx = (dx * cos - dz * sin) * scale;
+      let my = (dx * sin + dz * cos) * scale;
+      const len = Math.hypot(mx, my);
+      const maxLen = r - 10;
+      if (len > maxLen) {
+        mx = (mx / len) * maxLen;
+        my = (my / len) * maxLen;
+      }
+      ctx.save();
+      ctx.translate(r + mx, r + my);
+      ctx.fillStyle = '#ffd24a';
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // Player marker: a triangle at centre pointing up.
     ctx.save();

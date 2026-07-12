@@ -16,6 +16,7 @@ export type InputAction =
   | 'weapon2'
   | 'weapon3'
   | 'holster'
+  | 'radio'
   | 'pause';
 
 const DEFAULT_BINDINGS: Record<string, InputAction> = {
@@ -37,6 +38,7 @@ const DEFAULT_BINDINGS: Record<string, InputAction> = {
   Digit3: 'weapon3',
   Digit0: 'holster',
   KeyH: 'holster',
+  KeyR: 'radio',
   Escape: 'pause',
 };
 
