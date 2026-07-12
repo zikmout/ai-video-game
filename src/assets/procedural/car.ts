@@ -118,3 +118,38 @@ export function makeCar(color?: number): CarModel {
     halfExtents: new THREE.Vector3(width / 2, (wheelRadius + chassisHeight) / 2 + 0.3, length / 2),
   };
 }
+
+/**
+ * A roof light bar for police cars. Returns the group plus the two emissive
+ * materials so the police system can alternate them for a flashing effect.
+ */
+export function makeLightbar(): {
+  group: THREE.Group;
+  red: THREE.MeshStandardMaterial;
+  blue: THREE.MeshStandardMaterial;
+} {
+  const group = new THREE.Group();
+  group.name = 'Lightbar';
+  const red = new THREE.MeshStandardMaterial({
+    color: 0x992222,
+    emissive: 0xff2b2b,
+    emissiveIntensity: 2,
+  });
+  const blue = new THREE.MeshStandardMaterial({
+    color: 0x223399,
+    emissive: 0x2b6bff,
+    emissiveIntensity: 0.2,
+  });
+  const boxGeo = new THREE.BoxGeometry(0.34, 0.14, 0.22);
+  const left = new THREE.Mesh(boxGeo, red);
+  left.position.set(-0.25, 0, 0);
+  const right = new THREE.Mesh(boxGeo, blue);
+  right.position.set(0.25, 0, 0);
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(0.95, 0.05, 0.28),
+    new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 }),
+  );
+  base.position.y = -0.09;
+  group.add(left, right, base);
+  return { group, red, blue };
+}

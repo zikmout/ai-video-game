@@ -17,6 +17,10 @@ import { VehicleController } from '@/systems/VehicleController';
 import { TrafficSystem } from '@/systems/TrafficSystem';
 import { CrowdSystem } from '@/systems/CrowdSystem';
 import { DayNightCycle } from '@/systems/DayNightCycle';
+import { ParticleSystem } from '@/systems/ParticleSystem';
+import { WeaponSystem } from '@/systems/WeaponSystem';
+import { WantedSystem } from '@/systems/WantedSystem';
+import { PoliceSystem } from '@/systems/PoliceSystem';
 
 import { HUD } from '@/ui/HUD';
 import { MiniMap } from '@/ui/MiniMap';
@@ -46,11 +50,13 @@ export class Game {
   private readonly hud: HUD;
   private readonly miniMap: MiniMap;
   private readonly dayNight: DayNightCycle;
+  private readonly weapons: WeaponSystem;
   private readonly loop: GameLoop;
   private readonly driveFocus = new THREE.Vector3();
   private wasDriving = false;
   private money = 2500;
   private hudAccum = 0;
+  private lastWeaponName: string | null = null;
 
   private state: GameState = 'menu';
   private readonly focus = new THREE.Vector3();
@@ -103,19 +109,48 @@ export class Game {
 
     this.dayNight = new DayNightCycle(this.world);
 
-    // Order matters: vehicle enter/exit before on-foot movement; traffic, crowd
-    // and the day/night cycle after.
+    const particles = new ParticleSystem(this.engine.scene);
+
+    this.weapons = new WeaponSystem(
+      this.player,
+      this.input,
+      this.cameraController,
+      this.world,
+      this.vehicles,
+      crowd,
+      particles,
+      this.engine.scene,
+      this.bus,
+      () => this.vehicleController.isDriving,
+    );
+
+    const wanted = new WantedSystem(this.bus);
+    const police = new PoliceSystem(
+      this.world,
+      this.engine.scene,
+      this.vehicles,
+      () => this.currentFocusPosition(),
+      this.bus,
+    );
+
+    // Order matters: vehicle enter/exit before on-foot movement; weapons before
+    // the world reacts; traffic/crowd/police simulate; ambience last.
     this.systems.push(
       this.vehicleController,
       this.playerController,
+      this.weapons,
       traffic,
       crowd,
+      police,
+      wanted,
+      particles,
       this.dayNight,
     );
 
     this.hud = new HUD(root, { onPlay: () => this.play() });
     this.miniMap = new MiniMap(this.hud.getMinimapRoot(), this.world);
     this.hud.setMoney(this.money);
+    this.bus.on('wanted:changed', ({ level }) => this.hud.setStars(level));
 
     this.loop = new GameLoop(
       {
@@ -265,6 +300,13 @@ export class Game {
       : this.player.position;
     this.miniMap.render(center, heading, this.vehicles);
 
+    // Weapon label follows the equipped weapon (hidden while driving).
+    const weaponName = driving ? null : this.weapons.weaponName;
+    if (weaponName !== this.lastWeaponName) {
+      this.hud.setWeapon(weaponName);
+      this.lastWeaponName = weaponName;
+    }
+
     // Throttle text HUD updates (clock) to a few times a second.
     this.hudAccum += dt;
     if (this.hudAccum >= 0.25) {
@@ -279,10 +321,16 @@ export class Game {
     const range = GameConfig.vehicle.enterRange;
     const rangeSq = range * range;
     for (const v of this.vehicles) {
-      if (v.occupied) continue;
+      if (v.occupied || v.destroyed) continue;
       if (v.position.distanceToSquared(this.player.position) < rangeSq) return 'E — Monter';
     }
     return '';
+  }
+
+  /** Where the player effectively is: on foot, or inside the driven car. */
+  private currentFocusPosition(): THREE.Vector3 {
+    const v = this.vehicleController.vehicle;
+    return v ? v.position : this.player.position;
   }
 
   private render(alpha: number): void {

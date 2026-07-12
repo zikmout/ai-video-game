@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GameConfig } from '@/config/gameConfig';
+import { makeGun, type WeaponKind } from '@/assets/procedural/guns';
 
 /**
  * The player entity: a simple stylised character built from primitives (a
@@ -18,6 +19,7 @@ export class Player {
   private readonly legL: THREE.Mesh;
   private readonly legR: THREE.Mesh;
   private walkPhase = 0;
+  private gun: THREE.Group | null = null;
 
   constructor() {
     this.object.name = 'Player';
@@ -83,5 +85,31 @@ export class Player {
 
   get radius(): number {
     return GameConfig.player.radius;
+  }
+
+  /**
+   * Show the given weapon in the right hand (or hide any weapon with null).
+   * The gun is parented to the player group at hand height so it follows the
+   * body and faces the player's forward (+Z local).
+   */
+  equip(kind: WeaponKind | null): void {
+    if (this.gun) {
+      this.object.remove(this.gun);
+      this.gun = null;
+    }
+    if (!kind) return;
+    this.gun = makeGun(kind);
+    // Right-hand position; bazooka rides on the shoulder.
+    if (kind === 'bazooka') this.gun.position.set(0.28, 1.5, -0.05);
+    else this.gun.position.set(0.32, 1.05, 0.25);
+    this.object.add(this.gun);
+  }
+
+  /** World-space muzzle position for effects (approximate hand position). */
+  getMuzzleWorld(out = new THREE.Vector3()): THREE.Vector3 {
+    if (this.gun) {
+      return this.gun.getWorldPosition(out).add(new THREE.Vector3(0, 0, 0));
+    }
+    return out.copy(this.object.position).add(new THREE.Vector3(0, 1.1, 0));
   }
 }

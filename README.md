@@ -12,7 +12,7 @@ engineered to a studio-grade standard.
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Status](https://img.shields.io/badge/milestone-M3%20·%20Pedestrians%20%26%20day%2Fnight-35d0a5)
+![Status](https://img.shields.io/badge/milestone-M4%20·%20Weapons%20%26%20police-35d0a5)
 
 <br/>
 
@@ -37,6 +37,11 @@ configured — *without touching game code*.
 
 ## ✨ Highlights
 
+- 🔫 **Weapons** — pistol, SMG and bazooka (visible in hand), hitscan shots with
+  muzzle flash and impact sparks, and rockets with an area-of-effect blast.
+- 🚓 **Wanted system & police** — crimes raise your star level; patrol cars with
+  flashing light bars swarm in, box you in, and give up once the heat dies down.
+  Cars you destroy become blackened, smoking wrecks.
 - 🚗 **Drive anything** — walk up to a car, press `E`, and drive with arcade
   physics (throttle, brake, reverse, speed-sensitive steering) and a chase cam +
   speedometer.
@@ -62,12 +67,12 @@ configured — *without touching game code*.
 <div align="center">
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/day.png" alt="Daytime street with mini-map, clock and money HUD" width="100%"/><br/><sub><b>Day</b> — mini-map, clock & money HUD, parked cars</sub></td>
+<td width="50%"><img src="docs/screenshots/action.png" alt="Five wanted stars, bazooka equipped, burning police wrecks" width="100%"/><br/><sub><b>Action</b> — 5 stars, bazooka out, smoking police wrecks after a rocket blast</sub></td>
 <td width="50%"><img src="docs/screenshots/night.png" alt="The same street at night, streetlights on" width="100%"/><br/><sub><b>Night</b> — streetlights on, lit windows, night palette</sub></td>
 </tr>
 <tr>
+<td width="50%"><img src="docs/screenshots/day.png" alt="Daytime street with mini-map, clock and money HUD" width="100%"/><br/><sub><b>Day</b> — mini-map, clock & money HUD, parked cars</sub></td>
 <td width="50%"><img src="docs/screenshots/driving.png" alt="Driving through the city with traffic" width="100%"/><br/><sub><b>Driving</b> — chase cam, speedometer, and AI traffic sharing the road</sub></td>
-<td width="50%"><img src="docs/screenshots/street.png" alt="On foot with parked cars" width="100%"/><br/><sub><b>Street level</b> — parked cars, façades, lane markings, shadows</sub></td>
 </tr>
 </table>
 </div>
@@ -98,6 +103,8 @@ Open the URL Vite prints (default http://localhost:5173) and press **▶ Jouer**
 | Jump            | `Space`                    |
 | Look around     | Mouse (click to capture)   |
 | Enter car       | `E` / `F` (near a car)     |
+| Weapons         | `1` pistol · `2` SMG · `3` bazooka · `H` holster |
+| Fire            | Left mouse button          |
 | Pause / release | `Esc`                      |
 
 **Driving**
@@ -120,8 +127,8 @@ Each milestone is independently playable — see [docs/ROADMAP.md](docs/ROADMAP.
 | **M1** | Districts, props, a city that looks alive | ✅ done |
 | **M2** | Drivable vehicles + autonomous traffic | ✅ done |
 | **M3** | Pedestrians & world simulation (day/night, mini-map) | ✅ done |
-| **M4** | Weapons, police & wanted system | ⏳ next |
-| **M5** | Missions, radio, interiors, flyable plane | ⬜ |
+| **M4** | Weapons, police & wanted system | ✅ done |
+| **M5** | Missions, radio, interiors, flyable plane | ⏳ next |
 | **M6** | AI-generated assets, cinematics, perf pass | ⬜ |
 
 ## 🏛️ Architecture

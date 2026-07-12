@@ -16,6 +16,10 @@ export class Pedestrian {
   readonly target = new THREE.Vector3();
   /** True while fleeing (drives faster, panicked animation). */
   fleeing = false;
+  /** Dead peds lie still until the crowd system recycles them. */
+  dead = false;
+  /** Seconds remaining before a dead ped is recycled. */
+  despawnTimer = 0;
 
   private phase: number;
 
@@ -50,6 +54,23 @@ export class Pedestrian {
     const armBias = this.fleeing ? -1.2 : 0;
     this.model.armL.rotation.x = -swing + armBias;
     this.model.armR.rotation.x = swing + armBias;
+  }
+
+  /** Fall over and stay down; the crowd system recycles the body later. */
+  die(): void {
+    if (this.dead) return;
+    this.dead = true;
+    this.despawnTimer = 5;
+    this.object.rotation.x = -Math.PI / 2;
+    this.object.position.y = 0.25;
+  }
+
+  /** Reset to a living, standing state at a new position (recycling). */
+  revive(x: number, z: number): void {
+    this.dead = false;
+    this.fleeing = false;
+    this.object.rotation.x = 0;
+    this.object.position.set(x, 0, z);
   }
 
   dispose(): void {

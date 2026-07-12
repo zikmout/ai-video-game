@@ -143,7 +143,7 @@ export class TrafficSystem implements System {
 
     for (const agent of this.agents) {
       const v = agent.vehicle;
-      if (v.occupied) continue; // player hijacked this one — skip AI
+      if (v.occupied || v.destroyed) continue; // hijacked or wrecked — skip AI
 
       // Slow down if something is close ahead in our lane.
       const blocked = this.obstacleAhead(agent, look);

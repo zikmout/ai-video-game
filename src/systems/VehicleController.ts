@@ -9,6 +9,7 @@ import type { EventBus } from '@/core/EventBus';
 import type { GameEvents } from '@/core/events';
 import { GameConfig } from '@/config/gameConfig';
 import { moveTowards, clamp } from '@/core/math';
+import { resolveVehicleAgainstBuildings } from './vehicleCollision';
 
 /**
  * Owns the player↔vehicle relationship and drives the occupied car.
@@ -60,6 +61,12 @@ export class VehicleController implements System {
     const v = this.current;
     if (!v) return;
 
+    // The car blew up under us — bail out.
+    if (v.destroyed) {
+      this.exit();
+      return;
+    }
+
     const cfg = GameConfig.vehicle;
     const throttle = (this.input.isDown('forward') ? 1 : 0) - (this.input.isDown('back') ? 1 : 0);
     const steerInput = (this.input.isDown('left') ? 1 : 0) - (this.input.isDown('right') ? 1 : 0);
@@ -103,7 +110,7 @@ export class VehicleController implements System {
     let best: Vehicle | null = null;
     let bestDist = range * range;
     for (const v of this.vehicles) {
-      if (v.occupied) continue;
+      if (v.occupied || v.destroyed) continue;
       const d = this.tmp.copy(v.position).sub(this.player.position).lengthSq();
       if (d < bestDist) {
         bestDist = d;
@@ -142,22 +149,9 @@ export class VehicleController implements System {
 
   /** Slide the car out of overlapping building AABBs (XZ), and kill speed. */
   private resolveCollisions(v: Vehicle): void {
-    const r = v.model.halfExtents.z; // approximate as a circle of car half-length
-    let hit = false;
-    for (const box of this.world.buildingBoxes) {
-      const closestX = clamp(v.position.x, box.min.x, box.max.x);
-      const closestZ = clamp(v.position.z, box.min.z, box.max.z);
-      const dx = v.position.x - closestX;
-      const dz = v.position.z - closestZ;
-      const distSq = dx * dx + dz * dz;
-      if (distSq >= r * r) continue;
-      hit = true;
-      const dist = Math.sqrt(distSq) || 1e-4;
-      const push = (r - dist) / dist;
-      v.position.x += dx * push;
-      v.position.z += dz * push;
+    if (resolveVehicleAgainstBuildings(v, this.world.buildingBoxes)) {
+      v.speed *= 0.3; // crunch: lose most momentum
     }
-    if (hit) v.speed *= 0.3; // crunch: lose most momentum
   }
 
   private keepInBounds(v: Vehicle): void {

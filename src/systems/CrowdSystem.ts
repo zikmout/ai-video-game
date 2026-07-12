@@ -29,6 +29,11 @@ export class CrowdSystem implements System {
   private readonly tmp = new THREE.Vector3();
   private readonly flee = new THREE.Vector3();
 
+  /** Recent gunshot/explosion peds should scatter from (world XZ). */
+  private readonly panicPoint = new THREE.Vector3();
+  private panicTimer = 0;
+  private static readonly PANIC_RADIUS = 30;
+
   constructor(
     private readonly world: World,
     private readonly scene: THREE.Scene,
@@ -76,11 +81,59 @@ export class CrowdSystem implements System {
     ped.target.set(x, 0, z);
   }
 
+  /** Make everyone near `pos` scatter (gunshots, explosions). */
+  panicAt(pos: THREE.Vector3): void {
+    this.panicPoint.copy(pos);
+    this.panicTimer = 4;
+  }
+
+  /** Kill the pedestrian nearest to `pos` within `radius`. Returns it, or null. */
+  killNearest(pos: THREE.Vector3, radius: number): Pedestrian | null {
+    let best: Pedestrian | null = null;
+    let bestD = radius * radius;
+    for (const ped of this.peds) {
+      if (ped.dead) continue;
+      const d = ped.position.distanceToSquared(pos);
+      if (d < bestD) {
+        bestD = d;
+        best = ped;
+      }
+    }
+    if (best) best.die();
+    return best;
+  }
+
+  /** Kill every living pedestrian within `radius` of `pos`. Returns the count. */
+  killInRadius(pos: THREE.Vector3, radius: number): number {
+    let killed = 0;
+    const r2 = radius * radius;
+    for (const ped of this.peds) {
+      if (ped.dead) continue;
+      if (ped.position.distanceToSquared(pos) < r2) {
+        ped.die();
+        killed++;
+      }
+    }
+    return killed;
+  }
+
   fixedUpdate(dt: number): void {
     const cfg = GameConfig.crowd;
     const player = this.playerPos();
+    if (this.panicTimer > 0) this.panicTimer -= dt;
 
     for (const ped of this.peds) {
+      // Dead peds lie where they fell, then get recycled elsewhere.
+      if (ped.dead) {
+        ped.despawnTimer -= dt;
+        if (ped.despawnTimer <= 0) {
+          const [x, z] = this.randomSidewalkPoint();
+          ped.revive(x, z);
+          this.pickTarget(ped);
+        }
+        continue;
+      }
+
       // Detect a nearby fast car to flee from.
       let fleeing = false;
       this.flee.set(0, 0, 0);
@@ -93,6 +146,17 @@ export class CrowdSystem implements System {
           fleeing = true;
           // Flee directly away from the car, weighted by proximity.
           this.flee.addScaledVector(dist.multiplyScalar(-1 / (d * d)), 1);
+        }
+      }
+
+      // Scatter from recent gunfire too.
+      if (this.panicTimer > 0) {
+        const away = this.tmp.copy(ped.position).sub(this.panicPoint);
+        away.y = 0;
+        const d = away.length();
+        if (d < CrowdSystem.PANIC_RADIUS && d > 0.001) {
+          fleeing = true;
+          this.flee.addScaledVector(away.multiplyScalar(1 / (d * d)), 2);
         }
       }
 
@@ -138,6 +202,7 @@ export class CrowdSystem implements System {
 
   update(dt: number): void {
     for (const ped of this.peds) {
+      if (ped.dead) continue;
       const speed01 = ped.fleeing ? 1 : 0.7;
       ped.animate(speed01, dt);
     }

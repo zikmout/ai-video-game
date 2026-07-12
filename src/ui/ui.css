@@ -177,6 +177,36 @@ canvas {
   background: rgba(255, 255, 255, 0.6);
 }
 
+.hud .stars {
+  position: absolute;
+  top: 52px;
+  right: 18px;
+  font-size: 1.5rem;
+  letter-spacing: 0.15em;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.hud .stars .on {
+  color: #ffd24a;
+}
+
+.hud .stars .off {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.hud .weapon {
+  position: absolute;
+  bottom: 96px;
+  right: 30px;
+  padding: 6px 14px;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
 .hud .prompt {
   position: absolute;
   bottom: 26%;

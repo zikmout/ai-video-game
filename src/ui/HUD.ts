@@ -20,6 +20,8 @@ export class HUD {
   private clockEl!: HTMLDivElement;
   private moneyEl!: HTMLDivElement;
   private minimapRoot!: HTMLDivElement;
+  private starsEl!: HTMLDivElement;
+  private weaponEl!: HTMLDivElement;
 
   constructor(root: HTMLElement, callbacks: HUDCallbacks) {
     // Start / pause menu overlay.
@@ -50,8 +52,10 @@ export class HUD {
         <div class="money">$0</div>
       </div>
       <span class="fps">-- fps</span>
+      <div class="stars"></div>
       <div class="reticle"></div>
       <div class="prompt" style="display:none"></div>
+      <div class="weapon" style="display:none"></div>
       <div class="speedo" style="display:none">
         <span class="kmh">0</span><span class="unit">km/h</span>
       </div>
@@ -67,7 +71,34 @@ export class HUD {
     this.clockEl = this.hud.querySelector('.clock-time') as HTMLDivElement;
     this.moneyEl = this.hud.querySelector('.money') as HTMLDivElement;
     this.minimapRoot = this.hud.querySelector('.minimap-wrap') as HTMLDivElement;
+    this.starsEl = this.hud.querySelector('.stars') as HTMLDivElement;
+    this.weaponEl = this.hud.querySelector('.weapon') as HTMLDivElement;
     this.hintEl = this.overlay.querySelector('.menu-card') as HTMLDivElement;
+    this.setStars(0);
+  }
+
+  /** Wanted level, 0..5 — filled vs hollow stars, hidden when clean. */
+  setStars(level: number): void {
+    if (level <= 0) {
+      this.starsEl.style.display = 'none';
+      return;
+    }
+    this.starsEl.style.display = 'block';
+    let html = '';
+    for (let i = 0; i < 5; i++) {
+      html += `<span class="${i < level ? 'on' : 'off'}">★</span>`;
+    }
+    this.starsEl.innerHTML = html;
+  }
+
+  /** Equipped weapon label; null hides it. */
+  setWeapon(name: string | null): void {
+    if (!name) {
+      this.weaponEl.style.display = 'none';
+      return;
+    }
+    this.weaponEl.style.display = 'block';
+    this.weaponEl.textContent = name;
   }
 
   /** Container the MiniMap canvas should mount into. */

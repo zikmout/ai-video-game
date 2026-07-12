@@ -31,11 +31,11 @@ clean, studio-grade foundation. Each milestone is meant to be independently play
 - [x] Day/night cycle (sun arc, sky/fog palette, streetlights at dusk)
 - [x] Mini-map (roads, buildings, traffic blips), money & clock HUD
 
-## M4 — Action
+## ✅ M4 — Action
 
-- [ ] Weapons (pistol, SMG, launcher) with hit/impact feedback
-- [ ] Police + wanted system (stars, pursuit AI)
-- [ ] Destruction/impact effects, particles
+- [x] Weapons (pistol, SMG, bazooka) visible in hand, hitscan + rockets
+- [x] Police + wanted system (stars, decay, pursuit AI that brakes into turns)
+- [x] Particles (muzzle flash, impacts, explosions), burning vehicle wrecks
 
 ## M5 — Content
 

@@ -12,6 +12,10 @@ export type InputAction =
   | 'sprint'
   | 'jump'
   | 'interact'
+  | 'weapon1'
+  | 'weapon2'
+  | 'weapon3'
+  | 'holster'
   | 'pause';
 
 const DEFAULT_BINDINGS: Record<string, InputAction> = {
@@ -28,6 +32,11 @@ const DEFAULT_BINDINGS: Record<string, InputAction> = {
   Space: 'jump',
   KeyE: 'interact',
   KeyF: 'interact',
+  Digit1: 'weapon1',
+  Digit2: 'weapon2',
+  Digit3: 'weapon3',
+  Digit0: 'holster',
+  KeyH: 'holster',
   Escape: 'pause',
 };
 
@@ -51,6 +60,10 @@ export class Input {
   public lookDeltaX = 0;
   public lookDeltaY = 0;
   public pointerLocked = false;
+
+  /** Left mouse button held down / pressed this frame (fire control). */
+  private fireHeld = false;
+  private firePressedFrame = false;
 
   private disposers: Array<() => void> = [];
 
@@ -79,6 +92,15 @@ export class Input {
       this.lookDeltaX += e.movementX;
       this.lookDeltaY += e.movementY;
     };
+    const onMouseDown = (e: MouseEvent) => {
+      // Only treat clicks as fire while the pointer is captured (in gameplay).
+      if (!this.pointerLocked || e.button !== 0) return;
+      if (!this.fireHeld) this.firePressedFrame = true;
+      this.fireHeld = true;
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 0) this.fireHeld = false;
+    };
     const onPointerLockChange = () => {
       this.pointerLocked = document.pointerLockElement === this.element;
       if (!this.pointerLocked) {
@@ -91,6 +113,8 @@ export class Input {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mouseup', onMouseUp);
     document.addEventListener('pointerlockchange', onPointerLockChange);
     window.addEventListener('blur', onBlur);
 
@@ -98,9 +122,21 @@ export class Input {
       () => window.removeEventListener('keydown', onKeyDown),
       () => window.removeEventListener('keyup', onKeyUp),
       () => document.removeEventListener('mousemove', onMouseMove),
+      () => document.removeEventListener('mousedown', onMouseDown),
+      () => document.removeEventListener('mouseup', onMouseUp),
       () => document.removeEventListener('pointerlockchange', onPointerLockChange),
       () => window.removeEventListener('blur', onBlur),
     ];
+  }
+
+  /** True while the fire button is held (automatic weapons). */
+  isFireDown(): boolean {
+    return this.fireHeld;
+  }
+
+  /** True only on the frame the fire button went down (semi-auto weapons). */
+  wasFirePressed(): boolean {
+    return this.firePressedFrame;
   }
 
   /** Request pointer lock so mouse movement drives the camera. */
@@ -146,6 +182,7 @@ export class Input {
   /** Reset per-frame state. Call once at the end of each frame. */
   endFrame(): void {
     this.pressedThisFrame.clear();
+    this.firePressedFrame = false;
     this.lookDeltaX = 0;
     this.lookDeltaY = 0;
   }

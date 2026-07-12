@@ -18,6 +18,11 @@ export interface GameEvents {
   // Vehicles
   'vehicle:entered': void;
   'vehicle:exited': void;
+  'vehicle:destroyed': { position: [number, number, number] };
+
+  // Combat / crime
+  'gun:fired': { position: [number, number, number] };
+  'crime:committed': { kind: 'gunfire' | 'pedKilled' | 'vehicleDestroyed' | 'copRammed' };
 
   // World / progression (used by later milestones)
   'wanted:changed': { level: number };

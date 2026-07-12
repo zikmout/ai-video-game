@@ -108,6 +108,49 @@ export const GameConfig = {
     startHour: 9,
   },
 
+  weapons: {
+    /** Max range of hitscan weapons (m). */
+    range: 120,
+    pistol: { name: 'Pistolet', damage: 20, fireInterval: 0.35, auto: false, spread: 0.01 },
+    smg: { name: 'Mitraillette', damage: 9, fireInterval: 0.09, auto: true, spread: 0.035 },
+    bazooka: { name: 'Bazooka', damage: 120, fireInterval: 1.4, auto: false, spread: 0 },
+    rocket: {
+      speed: 38,
+      /** Blast radius of the explosion (m). */
+      blastRadius: 7,
+      lifetime: 5,
+    },
+  },
+
+  vehicleHealth: {
+    max: 100,
+    bulletDamage: 10,
+    /** Impulse damage scale when rammed hard (per m/s of closing speed). */
+    explosionDamage: 120,
+  },
+
+  wanted: {
+    /** Stars decay after this long without new crimes (s). */
+    decayDelay: 12,
+    /** Seconds per star lost once decaying. */
+    decayPerStar: 6,
+    /** Crime severities → wanted points. 100 points = 1 star. */
+    points: { gunfire: 40, pedKilled: 120, vehicleDestroyed: 160, copRammed: 90 },
+    maxStars: 5,
+  },
+
+  police: {
+    /** Pursuing cars per wanted star. */
+    carsPerStar: 1,
+    maxCars: 5,
+    /** Pursuit speed (m/s) — faster than traffic, slower than the player flat out. */
+    speed: 22,
+    /** Distance behind the player at which cops respawn if they fall too far. */
+    leashRange: 160,
+    /** Damage dealt to the player's car per ram (future use). */
+    ramDamage: 15,
+  },
+
   city: {
     /** Number of blocks per side of the grid. */
     blocks: 10,

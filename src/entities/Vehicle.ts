@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { makeCar, type CarModel } from '@/assets/procedural/car';
+import { GameConfig } from '@/config/gameConfig';
 
 /**
  * A car in the world. Holds the visual model plus kinematic state (heading,
@@ -24,11 +25,52 @@ export class Vehicle {
   /** True while a driver (player) occupies it. */
   occupied = false;
 
+  /** Hit points; at 0 the car explodes and becomes a wreck. */
+  health: number = GameConfig.vehicleHealth.max;
+  /** A destroyed car is an inert, blackened wreck (can't be entered/driven). */
+  destroyed = false;
+
   private wheelSpin = 0;
 
   constructor(color?: number) {
     this.model = makeCar(color);
     this.object = this.model.group;
+  }
+
+  /**
+   * Apply damage. Returns true if this hit destroyed the car (transition to the
+   * wreck state happens exactly once; caller triggers effects/events).
+   */
+  applyDamage(amount: number): boolean {
+    if (this.destroyed) return false;
+    this.health -= amount;
+    if (this.health > 0) return false;
+    this.destroyed = true;
+    this.health = 0;
+    this.speed = 0;
+    this.steer = 0;
+    this.blacken();
+    return true;
+  }
+
+  /** Char the wreck: darken every material (clone to avoid sharing paint). */
+  private blacken(): void {
+    this.object.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const darken = (m: THREE.Material): THREE.Material => {
+        const clone = m.clone() as THREE.MeshStandardMaterial;
+        if (clone.color) clone.color.multiplyScalar(0.12);
+        if ('emissive' in clone && clone.emissive) clone.emissive.setHex(0x000000);
+        if ('emissiveIntensity' in clone) clone.emissiveIntensity = 0;
+        clone.transparent = false;
+        clone.opacity = 1;
+        return clone;
+      };
+      mesh.material = Array.isArray(mesh.material)
+        ? mesh.material.map(darken)
+        : darken(mesh.material);
+    });
   }
 
   get position(): THREE.Vector3 {
