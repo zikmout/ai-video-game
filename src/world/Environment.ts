@@ -14,6 +14,11 @@ export class Environment {
   readonly sun: THREE.DirectionalLight;
   private readonly hemi: THREE.HemisphereLight;
 
+  /** Unit direction from the scene toward the sun (set by the day/night cycle). */
+  private readonly sunDir = new THREE.Vector3(0.55, 0.7, 0.3).normalize();
+  /** Distance the directional light sits from its target. */
+  private readonly sunDistance = 240;
+
   constructor(private readonly scene: THREE.Scene) {
     this.sky = new Sky();
     scene.add(this.sky.mesh);
@@ -45,11 +50,27 @@ export class Environment {
     this.sun.shadow.normalBias = 0.03;
   }
 
+  /** Set the sun/hemisphere ambient intensity (day/night cycle). */
+  setAmbientIntensity(intensity: number): void {
+    this.hemi.intensity = intensity;
+  }
+
+  /** Set the world-space direction toward the sun (day/night cycle). */
+  setSunDirection(dir: THREE.Vector3): void {
+    this.sunDir.copy(dir).normalize();
+  }
+
+  /** Set the scene fog colour (day/night cycle). */
+  setFogColor(color: THREE.Color): void {
+    if (this.scene.fog instanceof THREE.Fog) this.scene.fog.color.copy(color);
+  }
+
   /** Keep the sky centred and the shadow frustum following the focus point. */
   update(cameraPosition: THREE.Vector3, focus: THREE.Vector3): void {
     this.sky.update(cameraPosition);
-    // Anchor the sun's shadow camera around the player so shadows stay crisp.
-    this.sun.position.set(focus.x + 120, focus.y + 180, focus.z + 80);
+    // Place the directional light along the sun direction, anchored on the
+    // focus so shadows stay crisp near the player.
+    this.sun.position.copy(focus).addScaledVector(this.sunDir, this.sunDistance);
     this.sun.target.position.copy(focus);
     this.sun.target.updateMatrixWorld();
   }

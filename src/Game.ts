@@ -15,8 +15,11 @@ import { Vehicle } from '@/entities/Vehicle';
 import { PlayerController } from '@/systems/PlayerController';
 import { VehicleController } from '@/systems/VehicleController';
 import { TrafficSystem } from '@/systems/TrafficSystem';
+import { CrowdSystem } from '@/systems/CrowdSystem';
+import { DayNightCycle } from '@/systems/DayNightCycle';
 
 import { HUD } from '@/ui/HUD';
+import { MiniMap } from '@/ui/MiniMap';
 
 type GameState = 'menu' | 'playing' | 'paused';
 
@@ -41,9 +44,13 @@ export class Game {
   private readonly playerController: PlayerController;
   private readonly systems: System[] = [];
   private readonly hud: HUD;
+  private readonly miniMap: MiniMap;
+  private readonly dayNight: DayNightCycle;
   private readonly loop: GameLoop;
   private readonly driveFocus = new THREE.Vector3();
   private wasDriving = false;
+  private money = 2500;
+  private hudAccum = 0;
 
   private state: GameState = 'menu';
   private readonly focus = new THREE.Vector3();
@@ -87,10 +94,28 @@ export class Game {
       this.world,
     );
 
-    // Order matters: vehicle enter/exit before on-foot movement; traffic last.
-    this.systems.push(this.vehicleController, this.playerController, traffic);
+    const crowd = new CrowdSystem(
+      this.world,
+      this.engine.scene,
+      this.vehicles,
+      () => this.player.position,
+    );
+
+    this.dayNight = new DayNightCycle(this.world);
+
+    // Order matters: vehicle enter/exit before on-foot movement; traffic, crowd
+    // and the day/night cycle after.
+    this.systems.push(
+      this.vehicleController,
+      this.playerController,
+      traffic,
+      crowd,
+      this.dayNight,
+    );
 
     this.hud = new HUD(root, { onPlay: () => this.play() });
+    this.miniMap = new MiniMap(this.hud.getMinimapRoot(), this.world);
+    this.hud.setMoney(this.money);
 
     this.loop = new GameLoop(
       {
@@ -128,6 +153,12 @@ export class Game {
         this.player.position.set(car.position.x + 0.4, 0, car.position.z + 0.4);
         this.vehicleController.enterNearest();
       }
+    }
+    // `?hour=21` forces a time of day (demos/screenshots of the night cycle).
+    const hourParam = params.get('hour');
+    if (hourParam !== null) {
+      const h = Number(hourParam);
+      if (Number.isFinite(h)) this.dayNight.hour = ((h % 24) + 24) % 24;
     }
   }
 
@@ -223,6 +254,22 @@ export class Game {
     if (driving !== this.wasDriving) {
       this.hud.setDriving(driving);
       this.wasDriving = driving;
+    }
+
+    // Mini-map: centre on and rotate to whatever the player controls.
+    const heading = driving && this.vehicleController.vehicle
+      ? this.vehicleController.vehicle.heading
+      : this.player.object.rotation.y;
+    const center = driving && this.vehicleController.vehicle
+      ? this.vehicleController.vehicle.position
+      : this.player.position;
+    this.miniMap.render(center, heading, this.vehicles);
+
+    // Throttle text HUD updates (clock) to a few times a second.
+    this.hudAccum += dt;
+    if (this.hudAccum >= 0.25) {
+      this.hud.setClock(this.dayNight.getClockString());
+      this.hudAccum = 0;
     }
   }
 

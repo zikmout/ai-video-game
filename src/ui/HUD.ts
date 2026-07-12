@@ -17,6 +17,9 @@ export class HUD {
   private speedoEl!: HTMLDivElement;
   private kmhEl!: HTMLSpanElement;
   private reticleEl!: HTMLDivElement;
+  private clockEl!: HTMLDivElement;
+  private moneyEl!: HTMLDivElement;
+  private minimapRoot!: HTMLDivElement;
 
   constructor(root: HTMLElement, callbacks: HUDCallbacks) {
     // Start / pause menu overlay.
@@ -43,15 +46,16 @@ export class HUD {
     this.hud.className = 'hud';
     this.hud.innerHTML = `
       <div class="top-left">
-        <div class="label">Los Asetinos</div>
-        <div class="clock">M2 · Véhicules</div>
+        <div class="clock-time">09:00</div>
+        <div class="money">$0</div>
       </div>
       <span class="fps">-- fps</span>
       <div class="reticle"></div>
       <div class="prompt" style="display:none"></div>
       <div class="speedo" style="display:none">
         <span class="kmh">0</span><span class="unit">km/h</span>
-      </div>`;
+      </div>
+      <div class="minimap-wrap"></div>`;
     this.hud.style.display = 'none';
     root.appendChild(this.hud);
 
@@ -60,7 +64,23 @@ export class HUD {
     this.speedoEl = this.hud.querySelector('.speedo') as HTMLDivElement;
     this.kmhEl = this.hud.querySelector('.kmh') as HTMLSpanElement;
     this.reticleEl = this.hud.querySelector('.reticle') as HTMLDivElement;
+    this.clockEl = this.hud.querySelector('.clock-time') as HTMLDivElement;
+    this.moneyEl = this.hud.querySelector('.money') as HTMLDivElement;
+    this.minimapRoot = this.hud.querySelector('.minimap-wrap') as HTMLDivElement;
     this.hintEl = this.overlay.querySelector('.menu-card') as HTMLDivElement;
+  }
+
+  /** Container the MiniMap canvas should mount into. */
+  getMinimapRoot(): HTMLElement {
+    return this.minimapRoot;
+  }
+
+  setClock(text: string): void {
+    this.clockEl.textContent = text;
+  }
+
+  setMoney(amount: number): void {
+    this.moneyEl.textContent = `$${amount.toLocaleString('en-US')}`;
   }
 
   showMenu(paused = false): void {

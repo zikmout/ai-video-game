@@ -89,6 +89,25 @@ export const GameConfig = {
     lookahead: 9,
   },
 
+  crowd: {
+    /** Number of wandering pedestrians. */
+    count: 40,
+    /** Walking speed (m/s). */
+    speed: 1.4,
+    /** Distance at which a pedestrian flees an approaching car (m). */
+    fleeRadius: 6,
+    /** Flee speed multiplier. */
+    fleeMultiplier: 2.6,
+  },
+
+  /** Time-of-day cycle. */
+  dayNight: {
+    /** Real seconds for a full 24 h cycle. */
+    dayLengthSeconds: 240,
+    /** Hour the game starts at (0..24). */
+    startHour: 9,
+  },
+
   city: {
     /** Number of blocks per side of the grid. */
     blocks: 10,

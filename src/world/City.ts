@@ -40,6 +40,12 @@ export class City {
   /** Shared prop container so scattered decoration is one group. */
   private readonly props = new THREE.Group();
 
+  /**
+   * Streetlight lamp material, exposed so the day/night cycle can switch the
+   * lamps on at dusk and off at dawn via emissive intensity.
+   */
+  streetlightMaterial?: THREE.MeshStandardMaterial;
+
   /** Ground materials keyed by district open-ground type, created lazily. */
   private groundMaterials!: {
     grass: THREE.Material;
@@ -347,6 +353,7 @@ export class City {
         roughness: 0.4,
       }),
     );
+    this.streetlightMaterial = headMat;
 
     const positions: Array<[number, number]> = [];
     // Place lights along each road line at fixed spacing.

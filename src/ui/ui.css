@@ -125,15 +125,34 @@ canvas {
   background: var(--panel);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.9rem;
   color: var(--text);
+  text-align: right;
+  min-width: 96px;
 }
 
-.hud .top-left .label {
-  color: var(--muted);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.hud .top-left .clock-time {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.hud .top-left .money {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.hud .minimap-wrap {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+}
+
+.hud .minimap {
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .hud .fps {

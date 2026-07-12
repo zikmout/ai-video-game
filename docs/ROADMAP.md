@@ -24,11 +24,12 @@ clean, studio-grade foundation. Each milestone is meant to be independently play
 - [x] Enter/exit vehicle flow, chase camera + speedometer HUD
 - [x] Autonomous traffic on the road grid (lanes, turns, collision braking)
 
-## M3 — NPCs & world simulation
+## ✅ M3 — NPCs & world simulation
 
-- [ ] Pedestrians that walk sidewalks and cross at crossings
-- [ ] Simple crowd AI, reactions to the player and to danger
-- [ ] Day/night cycle, mini-map, money & clock
+- [x] Pedestrians that walk the sidewalk network (animated walk cycle)
+- [x] Simple crowd AI: wander targets, flee from approaching cars
+- [x] Day/night cycle (sun arc, sky/fog palette, streetlights at dusk)
+- [x] Mini-map (roads, buildings, traffic blips), money & clock HUD
 
 ## M4 — Action
 

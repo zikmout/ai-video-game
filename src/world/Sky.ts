@@ -10,6 +10,7 @@ import * as THREE from 'three';
  */
 export class Sky {
   readonly mesh: THREE.Mesh;
+  private readonly material: THREE.ShaderMaterial;
 
   constructor(radius = 900) {
     const geometry = new THREE.SphereGeometry(radius, 32, 16);
@@ -60,6 +61,7 @@ export class Sky {
       `,
     });
 
+    this.material = material;
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.name = 'Sky';
     // Render behind everything; never culled by frustum.
@@ -70,6 +72,23 @@ export class Sky {
   /** Keep the dome centred on the camera so it never appears to move. */
   update(cameraPosition: THREE.Vector3): void {
     this.mesh.position.copy(cameraPosition);
+  }
+
+  /** Set the three gradient colours (used by the day/night cycle). */
+  setColors(top: THREE.Color, horizon: THREE.Color, bottom: THREE.Color): void {
+    (this.material.uniforms.topColor!.value as THREE.Color).copy(top);
+    (this.material.uniforms.horizonColor!.value as THREE.Color).copy(horizon);
+    (this.material.uniforms.bottomColor!.value as THREE.Color).copy(bottom);
+  }
+
+  /** Point the sun glow along a world-space direction. */
+  setSunDirection(dir: THREE.Vector3): void {
+    (this.material.uniforms.sunDirection!.value as THREE.Vector3).copy(dir).normalize();
+  }
+
+  /** Tint the sun disc/halo (warmer at dawn/dusk). */
+  setSunColor(color: THREE.Color): void {
+    (this.material.uniforms.sunColor!.value as THREE.Color).copy(color);
   }
 
   dispose(): void {
