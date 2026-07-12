@@ -163,6 +163,49 @@ export const GameConfig = {
     },
   },
 
+  airport: {
+    /** Runway centreline X (east of the city grid; bounds.half is 270). */
+    runwayX: 300,
+    /** Runway half-length along Z (m). */
+    runwayHalfLength: 220,
+    /** Runway width (m). */
+    runwayWidth: 26,
+    /** Where the plane waits, on the runway's south end. */
+    planeSpawn: { x: 300, z: 150, heading: 0 },
+  },
+
+  plane: {
+    /** Max airspeed (m/s). */
+    maxSpeed: 70,
+    /** Speed needed before pulling up leaves the ground (m/s). */
+    takeoffSpeed: 26,
+    /** Below this airspeed the plane stalls and sinks (m/s). */
+    stallSpeed: 18,
+    /** Engine acceleration (m/s²). */
+    acceleration: 12,
+    /** Passive drag (m/s²). */
+    drag: 2.5,
+    /** Ground braking (m/s²). */
+    brakeForce: 14,
+    /** Yaw rate at full turn input (rad/s). */
+    turnRate: 0.9,
+    /** Pitch rate at full input (rad/s). */
+    pitchRate: 0.9,
+    /** Pitch limits (radians). */
+    maxPitch: 0.6,
+    /** Visual bank angle at full turn (radians). */
+    bankAngle: 0.55,
+    /** Altitude ceiling (m). */
+    maxAltitude: 160,
+    /** Sink rate when stalled (m/s). */
+    stallSink: 12,
+    /** Vertical impact speed that destroys the plane (m/s). */
+    crashSink: 8,
+    /** Reach for entering the plane (m). */
+    enterRange: 5,
+    camera: { distance: 14, height: 5.5, lambda: 5 },
+  },
+
   radio: {
     /** Master gain applied to every station (0..1). */
     volume: 0.4,

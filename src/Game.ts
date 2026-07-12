@@ -23,6 +23,8 @@ import { WantedSystem } from '@/systems/WantedSystem';
 import { PoliceSystem } from '@/systems/PoliceSystem';
 import { MissionSystem } from '@/systems/MissionSystem';
 import { RadioSystem } from '@/systems/RadioSystem';
+import { Plane } from '@/entities/Plane';
+import { PlaneController } from '@/systems/PlaneController';
 
 import { HUD } from '@/ui/HUD';
 import { MiniMap } from '@/ui/MiniMap';
@@ -56,6 +58,8 @@ export class Game {
   /** Public for dev probes: mission phase and radio station are inspectable. */
   readonly mission: MissionSystem;
   readonly radio: RadioSystem;
+  readonly planeController: PlaneController;
+  private readonly plane: Plane;
   private readonly loop: GameLoop;
   private readonly driveFocus = new THREE.Vector3();
   private wasDriving = false;
@@ -126,7 +130,7 @@ export class Game {
       particles,
       this.engine.scene,
       this.bus,
-      () => this.vehicleController.isDriving,
+      () => this.vehicleController.isDriving || this.planeController.isFlying,
     );
 
     const wanted = new WantedSystem(this.bus);
@@ -148,10 +152,27 @@ export class Game {
 
     this.radio = new RadioSystem(this.input, () => this.vehicleController.isDriving, this.bus);
 
+    // The airfield's plane, parked at the south end of the runway.
+    this.plane = new Plane();
+    const ps = GameConfig.airport.planeSpawn;
+    this.plane.placeAt(ps.x, ps.z, ps.heading);
+    this.engine.scene.add(this.plane.object);
+    this.planeController = new PlaneController(
+      this.player,
+      this.input,
+      this.cameraController,
+      this.world,
+      this.plane,
+      particles,
+      this.bus,
+      () => this.vehicleController.isDriving,
+    );
+
     // Order matters: vehicle enter/exit before on-foot movement; weapons before
     // the world reacts; traffic/crowd/police simulate; ambience last.
     this.systems.push(
       this.vehicleController,
+      this.planeController,
       this.playerController,
       this.weapons,
       traffic,
@@ -212,8 +233,19 @@ export class Game {
 
     // Dev/demo convenience via query params.
     const params = new URLSearchParams(window.location.search);
-    if (params.has('play') || params.has('drive') || params.has('mission')) {
+    if (params.has('play') || params.has('drive') || params.has('mission') || params.has('fly')) {
       this.play();
+    }
+    // `?fly` boards the runway plane; `?fly=air` starts mid-flight over the
+    // city (demos/screenshots of the flight view).
+    if (params.has('fly')) {
+      this.planeController.enterNow();
+      if (params.get('fly') === 'air') {
+        this.plane.position.set(190, 60, 60);
+        this.plane.heading = Math.PI / 2; // nose toward the city (-X)
+        this.plane.speed = 40;
+        this.plane.airborne = true;
+      }
     }
     // `?mission` makes Rico call immediately; `?mission=go` also skips the call
     // so the checkpoint marker is up right away (screenshots/probes).
@@ -282,20 +314,21 @@ export class Game {
 
   private fixedUpdate(dt: number): void {
     if (this.state !== 'playing') return;
-    const driving = this.vehicleController.isDriving;
+    const inControl = this.vehicleController.isDriving || this.planeController.isFlying;
     for (const s of this.systems) {
-      // Skip on-foot movement while the player is in a car.
-      if (driving && s === this.playerController) continue;
+      // Skip on-foot movement while the player is in a car or the plane.
+      if (inControl && s === this.playerController) continue;
       s.fixedUpdate?.(dt);
     }
   }
 
   private update(dt: number): void {
     const driving = this.vehicleController.isDriving;
+    const inControl = driving || this.planeController.isFlying;
 
     if (this.state === 'playing') {
       for (const s of this.systems) {
-        if (driving && s === this.playerController) continue;
+        if (inControl && s === this.playerController) continue;
         s.update?.(dt);
       }
     }
@@ -317,6 +350,8 @@ export class Game {
 
   /** Route the camera (chase vs orbit) and update contextual HUD. */
   private updateCameraAndHud(dt: number, driving: boolean): void {
+    const flying = this.planeController.isFlying;
+
     if (driving && this.vehicleController.vehicle) {
       const v = this.vehicleController.vehicle;
       this.vehicleController.getCameraFocus(this.driveFocus);
@@ -324,34 +359,50 @@ export class Game {
       this.cameraController.chase(this.driveFocus, v.heading, c.distance, c.height, c.lambda, dt);
       this.world.update(this.engine.camera.position, this.driveFocus);
       this.hud.setSpeed(v.speed);
+      this.hud.setAltitude(null);
       this.hud.setPrompt('E — Sortir');
+    } else if (flying) {
+      const p = this.planeController.aircraft;
+      this.planeController.getCameraFocus(this.driveFocus);
+      const c = GameConfig.plane.camera;
+      this.cameraController.chase(this.driveFocus, p.heading, c.distance, c.height, c.lambda, dt);
+      this.world.update(this.engine.camera.position, this.driveFocus);
+      this.hud.setSpeed(p.speed);
+      this.hud.setAltitude(p.altitude);
+      this.hud.setPrompt(p.altitude < 2 ? 'E — Sortir' : '');
     } else {
       this.player.getFocus(this.focus);
       this.cameraController.update(this.focus, dt);
       this.world.update(this.engine.camera.position, this.focus);
-      this.hud.setPrompt(this.nearbyCarPrompt());
+      this.hud.setAltitude(null);
+      this.hud.setPrompt(this.nearbyPrompt());
     }
 
-    if (driving !== this.wasDriving) {
-      this.hud.setDriving(driving);
-      this.wasDriving = driving;
+    const inControl = driving || flying;
+    if (inControl !== this.wasDriving) {
+      this.hud.setDriving(inControl);
+      this.wasDriving = inControl;
     }
 
     // Mini-map: centre on and rotate to whatever the player controls.
     const heading = driving && this.vehicleController.vehicle
       ? this.vehicleController.vehicle.heading
-      : this.player.object.rotation.y;
+      : flying
+        ? this.planeController.aircraft.heading
+        : this.player.object.rotation.y;
     const center = driving && this.vehicleController.vehicle
       ? this.vehicleController.vehicle.position
-      : this.player.position;
+      : flying
+        ? this.planeController.aircraft.position
+        : this.player.position;
     this.miniMap.render(center, heading, this.vehicles, this.mission.targetPosition, this.mission.car);
 
     // Live distance readout next to the mission objective.
     const target = this.mission.targetPosition;
     this.hud.setObjectiveDistance(target ? target.distanceTo(center) : null);
 
-    // Weapon label follows the equipped weapon (hidden while driving).
-    const weaponName = driving ? null : this.weapons.weaponName;
+    // Weapon label follows the equipped weapon (hidden while driving/flying).
+    const weaponName = inControl ? null : this.weapons.weaponName;
     if (weaponName !== this.lastWeaponName) {
       this.hud.setWeapon(weaponName);
       this.lastWeaponName = weaponName;
@@ -365,8 +416,8 @@ export class Game {
     }
   }
 
-  /** "E — Monter" when the player stands near an enterable car, else empty. */
-  private nearbyCarPrompt(): string {
+  /** "E — Monter/Piloter" when near an enterable car or the plane. */
+  private nearbyPrompt(): string {
     if (this.state !== 'playing') return '';
     const range = GameConfig.vehicle.enterRange;
     const rangeSq = range * range;
@@ -374,13 +425,22 @@ export class Game {
       if (v.occupied || v.destroyed) continue;
       if (v.position.distanceToSquared(this.player.position) < rangeSq) return 'E — Monter';
     }
+    const pr = GameConfig.plane.enterRange;
+    if (
+      !this.plane.destroyed &&
+      this.plane.position.distanceToSquared(this.player.position) < pr * pr
+    ) {
+      return 'E — Piloter';
+    }
     return '';
   }
 
-  /** Where the player effectively is: on foot, or inside the driven car. */
+  /** Where the player effectively is: on foot, driving, or flying. */
   private currentFocusPosition(): THREE.Vector3 {
     const v = this.vehicleController.vehicle;
-    return v ? v.position : this.player.position;
+    if (v) return v.position;
+    if (this.planeController.isFlying) return this.plane.position;
+    return this.player.position;
   }
 
   private render(alpha: number): void {

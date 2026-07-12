@@ -247,6 +247,13 @@ canvas {
   letter-spacing: 0.06em;
 }
 
+.hud .speedo .alt {
+  margin-left: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #7fc4ff;
+}
+
 /* ── Mission UI ───────────────────────────────────────────────────────────── */
 .hud .objective {
   position: absolute;

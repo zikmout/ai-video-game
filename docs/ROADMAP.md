@@ -43,9 +43,11 @@ clean, studio-grade foundation. Each milestone is meant to be independently play
       checkpoints, car theft → 2-star pursuit, delivery, $ reward, retry on fail
 - [x] Radio with music tracks (3 procedurally synthesized Web Audio stations)
 
-## M5.5 — Wings
+## ✅ M5.5 — Wings
 
-- [ ] Airport zone + flyable plane (arcade flight, crash explosion)
+- [x] Airport zone (runway with markings, hangar, control tower, apron)
+- [x] Flyable plane: arcade flight (taxi, takeoff threshold, climb/dive/bank,
+      stall, altitude ceiling), crash explosions on buildings/hard landings
 
 ## M6 — Polish & AI assets
 

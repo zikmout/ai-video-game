@@ -20,6 +20,11 @@ export interface GameEvents {
   'vehicle:exited': void;
   'vehicle:destroyed': { position: [number, number, number] };
 
+  // Plane
+  'plane:entered': void;
+  'plane:exited': void;
+  'plane:crashed': { position: [number, number, number] };
+
   // Combat / crime
   'gun:fired': { position: [number, number, number] };
   'crime:committed': {

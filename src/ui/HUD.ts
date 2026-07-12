@@ -28,6 +28,7 @@ export class HUD {
   private objectiveDistEl!: HTMLSpanElement;
   private bannerEl!: HTMLDivElement;
   private radioEl!: HTMLDivElement;
+  private altEl!: HTMLSpanElement;
   private bannerTimer: number | undefined;
   private radioTimer: number | undefined;
 
@@ -65,7 +66,7 @@ export class HUD {
       <div class="prompt" style="display:none"></div>
       <div class="weapon" style="display:none"></div>
       <div class="speedo" style="display:none">
-        <span class="kmh">0</span><span class="unit">km/h</span>
+        <span class="kmh">0</span><span class="unit">km/h</span><span class="alt" style="display:none"></span>
       </div>
       <div class="radio-label" style="display:none"></div>
       <div class="objective" style="display:none">
@@ -100,6 +101,7 @@ export class HUD {
     this.objectiveDistEl = this.hud.querySelector('.objective-dist') as HTMLSpanElement;
     this.bannerEl = this.hud.querySelector('.banner') as HTMLDivElement;
     this.radioEl = this.hud.querySelector('.radio-label') as HTMLDivElement;
+    this.altEl = this.hud.querySelector('.alt') as HTMLSpanElement;
     this.hintEl = this.overlay.querySelector('.menu-card') as HTMLDivElement;
     this.setStars(0);
   }
@@ -237,5 +239,15 @@ export class HUD {
   /** Update the speedometer. `speed` in m/s; displayed as km/h. */
   setSpeed(speed: number): void {
     this.kmhEl.textContent = String(Math.round(Math.abs(speed) * 3.6));
+  }
+
+  /** Altitude readout while flying (metres); null hides it. */
+  setAltitude(metres: number | null): void {
+    if (metres === null) {
+      this.altEl.style.display = 'none';
+    } else {
+      this.altEl.style.display = 'inline';
+      this.altEl.textContent = `▲ ${Math.round(metres)} m`;
+    }
   }
 }

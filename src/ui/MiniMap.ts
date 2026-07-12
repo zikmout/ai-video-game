@@ -22,7 +22,8 @@ export class MiniMap {
   private readonly worldSize: number;
 
   constructor(root: HTMLElement, private readonly world: World) {
-    this.worldSize = world.city.bounds.size;
+    // Cover the city plus the airfield strip east of it.
+    this.worldSize = world.city.bounds.size + 200;
 
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'minimap';
@@ -33,8 +34,8 @@ export class MiniMap {
 
     // Offscreen base holds the whole city at a fixed resolution.
     this.base = document.createElement('canvas');
-    this.base.width = 512;
-    this.base.height = 512;
+    this.base.width = 640;
+    this.base.height = 640;
     this.baseCtx = this.base.getContext('2d')!;
     this.drawBase();
   }
@@ -73,13 +74,28 @@ export class MiniMap {
       ctx.stroke();
     }
 
-    // Building footprints.
+    // Building footprints (city + airport obstacles).
     ctx.fillStyle = '#5a6472';
     for (const box of this.world.buildingBoxes) {
       const [x0, z0] = this.worldToBase(box.min.x, box.min.z);
       const [x1, z1] = this.worldToBase(box.max.x, box.max.z);
       ctx.fillRect(x0, z0, x1 - x0, z1 - z0);
     }
+
+    // Airfield runway east of the grid.
+    const { runwayX, runwayHalfLength, runwayWidth } = GameConfig.airport;
+    const [rx0, rz0] = this.worldToBase(runwayX - runwayWidth / 2, -runwayHalfLength);
+    const [rx1, rz1] = this.worldToBase(runwayX + runwayWidth / 2, runwayHalfLength);
+    ctx.fillStyle = '#3c4048';
+    ctx.fillRect(rx0, rz0, rx1 - rx0, rz1 - rz0);
+    ctx.strokeStyle = '#f4f4f4';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo((rx0 + rx1) / 2, rz0);
+    ctx.lineTo((rx0 + rx1) / 2, rz1);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   /**
